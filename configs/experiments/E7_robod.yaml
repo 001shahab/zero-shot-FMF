@@ -1,0 +1,76 @@
+# E7a -- Does zero-shot forecasting transfer to a real building?
+#
+# This is half of the experiment that makes the paper publishable. Everything in E1 to E6
+# is measured on a simulator whose parameters were chosen by the same people making the
+# claim. E7a runs the identical protocol on real per-room occupancy from a building
+# nobody in this project instrumented.
+#
+# ROBOD (Tekler et al. 2023) gives five rooms of the SDE4 building at the National
+# University of Singapore, with camera-counted occupancy at five minutes alongside the
+# CO2, temperature, humidity, illuminance and Wi-Fi association counts. It is the closest
+# public analogue to a heritage museum's instrumentation.
+#
+# The site does not exist until its fetch script has been run:
+#
+#     python scripts/fetch_robod.py
+#
+# The runner refuses to start on a site that is not under data/canonical/, so a forgotten
+# fetch fails immediately rather than producing a report that silently covers fewer
+# buildings than it claims.
+#
+# Why there is no reconciliation arm here. ROBOD counts people in rooms and nothing at
+# the doorways, so the conservation identity has no observed terms at this site. A
+# reconciler would project onto a constraint assembled entirely from the forecaster's own
+# predicted flows, and the coherence residual it reported would measure the forecaster's
+# self-consistency rather than its agreement with the building. The runner enforces this:
+# asking for any reconciler other than `none` on a flowless site is an error. The
+# constraint machinery is tested on real data in E7_hzmetro, which has measured flow.
+
+id: E7_robod
+question: >-
+  Do the zero-shot forecasting results hold on real, camera-counted room occupancy, under
+  the same protocol as the simulated sites?
+
+sites:
+  - robod_bldg1
+
+seeds: [0, 1, 2]
+
+protocol:
+  # ROBOD is sampled at 300 s, so these are the spec's horizons exactly: 5, 15, 30 and 60
+  # minutes. The context is one full day, which is the shortest window that lets
+  # seasonal_naive produce a forecast at all and therefore the shortest that keeps the
+  # classical baseline in the comparison.
+  context_length: 288
+  horizons: [1, 3, 6, 12]
+  stride: 12
+  quantiles: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+  # Unset means one day at the site's own interval, which is 288 steps here.
+  mase_season: null
+  # ROBOD was collected in weekday blocks, with weekends and a two-month vacation break
+  # absent: two thirds of the (room, step) cells on the regular grid are unobserved. An
+  # origin that lands in a hole has no context to condition on and no truth to score
+  # against, so it is dropped and counted in the manifest rather than entering the tables
+  # as an origin on which every method scored NaN.
+  require_observed: true
+
+sensor_profile: clean      # the data is already whatever the real sensors gave
+covariates: all
+reconcilers: [none]
+
+methods:
+  - name: last_value
+  - name: seasonal_naive
+  - name: historical_average
+  - name: timesfm3_univariate
+  - name: timesfm3_multivariate
+  - name: chronos2_multivariate
+  - name: toto2
+
+notes:
+  reference_method: seasonal_naive+none
+  caveat: >-
+    SDE4 is a university building, not a heritage museum. Lecture rooms fill and empty on
+    a timetable that no gallery follows. The transfer claim this experiment supports is
+    about zero-shot forecasting of room-level occupancy from environmental context, not
+    about visitor behaviour in heritage settings.

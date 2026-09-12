@@ -124,16 +124,26 @@ def _git(*args: str) -> str | None:
         )
     except (subprocess.SubprocessError, OSError, FileNotFoundError):
         return None
-    return out.stdout.strip()
+    # Only the trailing newline goes. The first two characters of a `status --porcelain`
+    # line are the index and worktree status and either of them can be a space, so
+    # stripping leading whitespace would eat the first character of the first path.
+    return out.stdout.rstrip("\n")
+
+
+def _rev(*args: str) -> str | None:
+    """A ``git rev-parse`` result, with its surrounding whitespace removed."""
+    out = _git("rev-parse", *args)
+    return None if out is None else out.strip()
 
 
 def git_state() -> dict[str, Any]:
     """Commit, branch and dirty flag of the working tree."""
     status = _git("status", "--porcelain")
     return {
-        "commit": _git("rev-parse", "HEAD"),
-        "branch": _git("rev-parse", "--abbrev-ref", "HEAD"),
+        "commit": _rev("HEAD"),
+        "branch": _rev("--abbrev-ref", "HEAD"),
         "dirty": bool(status) if status is not None else None,
+        # Porcelain v1 prefixes every path with two status characters and a space.
         "dirty_files": sorted(line[3:] for line in status.splitlines()) if status else [],
     }
 

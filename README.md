@@ -64,7 +64,7 @@ second ground rule. Run them and read `paper/tables/`.
 | **E4** | How much local history before a trained model overtakes zero-shot? | `configs/experiments/E4.yaml` |
 | **E5** | How fast does each method degrade as the sensors get worse? | `configs/experiments/E5.yaml` |
 | **E6** | Does the forecast change a decision an operator would make? | `configs/experiments/E6.yaml` |
-| **E7** | Does any of it transfer to real buildings? | `configs/experiments/E7.yaml` |
+| **E7** | Does any of it transfer to real buildings? | `configs/experiments/E7_robod.yaml` |
 
 E7 is the one that makes the work publishable. Everything before it is measured on a
 simulator whose parameters were chosen by the same person making the claim.
@@ -105,7 +105,7 @@ sensor dropout forces the conservation anchor to be carried forward, the number 
 it was carried appears in `reconciliation.parquet` as `anchor_staleness_steps`.
 
 **6. Typed, linted, tested.** Python 3.11+, type hints on every public function, `ruff`
-and `mypy --strict`-adjacent clean, 299 tests.
+and `mypy --strict`-adjacent clean, 349 tests.
 
 ---
 
@@ -236,7 +236,8 @@ src/mflow/
 ├── reconcile/         M5  constraints, projection, MinT, quantile lifting
 ├── eval/              M6  protocol, metrics, significance, harness, report
 ├── risk/              M6  congestion, anomaly, exposure
-└── experiments/       M7  config, runner, risk adapter
+├── experiments/       M7  config, runner, risk adapter
+└── data/                  external dataset acquisition and adapters
 ```
 
 ### M1 — schema and graph
@@ -429,6 +430,13 @@ The training-budget sweep blanks the training window before the cutoff rather th
 shortening the panel, so every budget shares the same origins, contexts and test window
 and only the quantity of history changes.
 
+Two guards exist because real data forced them. `require_observed` drops origins whose
+context or target is too empty to evaluate, recording the count and the reason in the
+manifest; it is off for simulated sites, where a dropped origin would mean a bug rather
+than a hole in the record. And a site that measures no doorway flow cannot be reconciled
+at all — the run stops rather than projecting onto a constraint assembled entirely from
+the forecaster's own predictions.
+
 ---
 
 ## Command line reference
@@ -467,6 +475,36 @@ HZMetro is a transport network, not a museum. It is included because it exercise
 conservation constraint on a real closed graph; no claim about visitor behaviour in
 heritage settings rests on it, and E7's config says so.
 
+### ROBOD
+
+```bash
+python scripts/fetch_robod.py     # ~20 MB, writes data/canonical/robod_bldg1/
+mflow run configs/experiments/E7_robod.yaml
+```
+
+Five rooms of the SDE4 building at the National University of Singapore, camera-counted
+at five minutes, with CO2, temperature, humidity, illuminance and Wi-Fi association
+counts alongside. Three things about the conversion are worth knowing before reading any
+number that comes out of it, and all three are recorded in the site's `meta.provenance`:
+
+- **ROBOD measures no doorway flow.** `flow.parquet` is written dense and entirely
+  missing, and `has_ground_truth_flow` is false. Flow is *not* derived from successive
+  occupancy differences: doing so would manufacture exactly the quantity reconciliation
+  is meant to be evaluated on, and every coherence number computed over it would be
+  circular. The runner refuses a reconciler other than `none` on a site with no measured
+  flow, which is why E7 is split in two — `E7_robod` tests the forecasting claims and
+  `E7_hzmetro` will test the constraint machinery.
+- **ROBOD publishes no opening hours for SDE4**, so `opening_hours` is empty and no
+  `is_open` covariate is emitted. An invented timetable would make the calendar arm of
+  the covariate ablation measure a fiction.
+- **The record has holes.** Collection ran in weekday blocks with weekends and a
+  two-month vacation break absent: two thirds of the (room, step) cells on the regular
+  grid are unobserved. Gaps are carried through as missing values, and the protocol
+  handles them explicitly through `require_observed`, which drops origins with no usable
+  context or no truth to score against and records the count and the reason in the run
+  manifest. A run over a gappy record therefore cannot silently evaluate on a fraction of
+  the origins its stride implies.
+
 ---
 
 ## Reproducibility
@@ -495,8 +533,8 @@ mypy src
 pytest
 ```
 
-The suite is 299 tests and runs in about twelve seconds. Tests needing downloaded weights
-or fetched datasets are opt-in:
+The suite is 349 tests and runs in about twenty-five seconds. Tests needing downloaded
+weights or fetched datasets are opt-in:
 
 ```bash
 pytest -m requires_weights
@@ -525,7 +563,10 @@ only parses when told to target 3.12 or later.
 | M5 reconciliation | complete |
 | M6 protocol, metrics, significance, harness, risk heads, reporting | complete |
 | M7 experiment configs E1–E7, runner, CLI | complete |
-| Dataset adapters and fetch scripts | **in progress** — E7 cannot run until they land |
+| Dataset acquisition framework (download, checksums, provenance, adapter base) | complete |
+| ROBOD adapter and `scripts/fetch_robod.py` | complete — `E7_robod` runs end to end |
+| HZMetro/PVCGN adapter | **in progress** — `E7_hzmetro` cannot run until it lands |
+| Melbourne, ATC, UWB, DCRNN adapters | **not started** |
 
 The simulated sites currently in `data/canonical/` are short. `sim_house_museum` has 30
 days; `sim_palazzo` and `sim_national` have 2. Regenerate them before running E1–E6:

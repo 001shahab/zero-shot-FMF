@@ -23,8 +23,10 @@ is leakage that no unit test on the forecaster would catch.
 
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections import Counter
+from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass
+from types import MappingProxyType
 from typing import Final
 
 import numpy as np
@@ -179,6 +181,10 @@ class RollingOriginPlan:
         horizon: the longest horizon evaluated.
         horizons: the horizons reported separately, in steps.
         quantiles: the quantile levels every method must produce.
+        dropped: origins that were enumerated and then found unusable, mapped to why.
+            Recorded rather than discarded: a run over a record with a two-month hole in
+            it evaluates on fewer origins than the stride implies, and the reader of the
+            results has to be able to see that.
     """
 
     tasks: tuple[ForecastTask, ...]
@@ -187,6 +193,7 @@ class RollingOriginPlan:
     horizon: int
     horizons: tuple[int, ...]
     quantiles: tuple[float, ...]
+    dropped: Mapping[int, str] = MappingProxyType({})
 
     def __len__(self) -> int:
         return len(self.tasks)
@@ -204,12 +211,15 @@ class RollingOriginPlan:
 
     def describe(self) -> dict[str, object]:
         """Summary for a run manifest."""
+        reasons = Counter(self.dropped.values())
         return {
             "n_origins": len(self.tasks),
             "context_length": self.context_length,
             "horizon": self.horizon,
             "horizons": list(self.horizons),
             "quantiles": list(self.quantiles),
+            "n_origins_dropped": len(self.dropped),
+            "dropped_reasons": dict(sorted(reasons.items())),
             **self.split.describe(),
         }
 
@@ -224,6 +234,7 @@ def build_plan(
     fractions: tuple[float, float, float] = DEFAULT_SPLIT,
     gap: int | None = None,
     max_origins: int | None = None,
+    require_observed: bool = False,
 ) -> RollingOriginPlan:
     """Enumerate the forecast origins for one site.
 
@@ -242,6 +253,13 @@ def build_plan(
         gap: gap between splits, defaulting to the longest horizon.
         max_origins: keep at most this many origins, evenly spaced, which is how a
             smoke run is made cheap without changing the protocol.
+        require_observed: drop origins whose context or target is too empty to evaluate.
+            Off by default, because simulated sites are complete and dropping nothing is
+            the stricter guarantee. Real records are not complete -- ROBOD, for instance,
+            was collected in weekday blocks and has a two-month hole in the middle -- and
+            over those an origin in the hole has no anchor for the conservation identity
+            and no truth to score against. Every dropped origin is recorded in
+            :attr:`RollingOriginPlan.dropped` and counted in the run manifest.
 
     Raises:
         ProtocolError: if the arguments cannot produce a single valid origin.
@@ -277,6 +295,32 @@ def build_plan(
         )
 
     origins = list(range(first, last + 1, stride))
+
+    dropped: dict[int, str] = {}
+    if require_observed:
+        # A channel that is NaN across the entire record is a site-level absence, not an
+        # origin-level hole: ROBOD measures no doorway flows at all, so every flow series
+        # is empty everywhere and no choice of origin would fix that. Judging origins
+        # against such a channel would reject all of them for a reason that has nothing to
+        # do with the origin.
+        live = np.isfinite(panel.series).any(axis=1)
+        kept = []
+        for origin in origins:
+            reason = _unusable(panel, origin, context_length, horizon, live)
+            if reason is None:
+                kept.append(origin)
+            else:
+                dropped[origin] = reason
+        if not kept:
+            raise ProtocolError(
+                f"all {len(origins)} enumerated origins are unusable: "
+                f"{dict(sorted(Counter(dropped.values()).items()))}. The record has no "
+                "window with both a full context and an observed target."
+            )
+        origins = kept
+
+    # Thinning comes after the eligibility filter so that a capped run keeps `max_origins`
+    # usable origins rather than `max_origins` candidates of which most are holes.
     if max_origins is not None and len(origins) > max_origins:
         keep = np.linspace(0, len(origins) - 1, max_origins).round().astype(int)
         origins = [origins[i] for i in dict.fromkeys(keep.tolist())]
@@ -292,7 +336,28 @@ def build_plan(
         horizon=horizon,
         horizons=ordered_horizons,
         quantiles=tuple(float(q) for q in quantiles),
+        dropped=MappingProxyType(dropped),
     )
+
+
+def _unusable(
+    panel: Panel, origin: int, context_length: int, horizon: int, live: np.ndarray
+) -> str | None:
+    """Why this origin cannot be evaluated, or None if it can.
+
+    Two things have to hold, judged only over the ``live`` channels. Every live series
+    needs at least one finite observation in its context, because that is what anchors
+    the conservation identity and what any forecaster conditions on. And the target
+    window needs at least one finite value somewhere, because an origin scored entirely
+    against NaN contributes nothing to any metric while still counting as an origin in
+    every table and every paired test.
+    """
+    context = panel.series[live, origin - context_length : origin]
+    if not np.isfinite(context).any(axis=1).all():
+        return "a target series has no observation anywhere in its context"
+    if not np.isfinite(panel.series[live, origin : origin + horizon]).any():
+        return "the target window is entirely unobserved"
+    return None
 
 
 def context_panel(panel: Panel, task: ForecastTask) -> Panel:

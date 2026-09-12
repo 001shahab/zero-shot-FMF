@@ -466,6 +466,109 @@ def test_mint_and_the_proposal_both_reconcile_but_differ(toy_site, plan) -> None
     assert not np.allclose(mint, proposed)
 
 
+# --------------------------------------------------------------------------- #
+# Origin eligibility over a record with holes
+# --------------------------------------------------------------------------- #
+
+
+def _holed(panel: Panel, hole: slice) -> Panel:
+    """The same panel with every target unobserved over ``hole``."""
+    series = panel.series.copy()
+    series[:, hole] = np.nan
+    return Panel(
+        series=series,
+        series_ids=panel.series_ids,
+        timestamps=panel.timestamps,
+        past_covariates=panel.past_covariates,
+        past_covariate_ids=panel.past_covariate_ids,
+        future_covariates=panel.future_covariates,
+        future_covariate_ids=panel.future_covariate_ids,
+        interval_seconds=panel.interval_seconds,
+        site_id=panel.site_id,
+    )
+
+
+def _plan_over(panel: Panel, **kwargs):
+    return build_plan(
+        panel, context_length=20, horizons=[4], stride=1, quantiles=QUANTILES, **kwargs
+    )
+
+
+def test_by_default_no_origin_is_dropped(toy_site) -> None:
+    # Simulated sites are complete, and there dropping nothing is the stricter guarantee:
+    # a dropped origin would mean a bug, not a hole in the record.
+    plan = _plan_over(_holed(toy_site.to_panel(), slice(205, 232)))
+    assert plan.dropped == {}
+    assert plan.describe()["n_origins_dropped"] == 0
+
+
+def test_an_origin_inside_a_hole_is_dropped_and_the_reason_recorded(toy_site) -> None:
+    panel = toy_site.to_panel()
+    full = _plan_over(panel)
+    holed = _plan_over(_holed(panel, slice(205, 232)), require_observed=True)
+
+    assert len(holed) < len(full)
+    assert holed.dropped, "a forty-step hole must cost some origins"
+    assert set(holed.dropped.values()) <= {
+        "a target series has no observation anywhere in its context",
+        "the target window is entirely unobserved",
+    }
+    # The count reaches the manifest, so a run over a gappy record cannot quietly
+    # evaluate on a third of the origins the stride implies.
+    described = holed.describe()
+    assert described["n_origins_dropped"] == len(holed.dropped)
+    assert sum(described["dropped_reasons"].values()) == len(holed.dropped)
+
+
+def test_a_surviving_origin_really_has_context_and_truth(toy_site) -> None:
+    panel = _holed(toy_site.to_panel(), slice(205, 232))
+    plan = _plan_over(panel, require_observed=True)
+    for task in plan:
+        context = panel.series[:, task.context_start : task.origin]
+        assert np.isfinite(context).any(axis=1).all()
+        assert np.isfinite(panel.series[:, task.origin : task.origin + task.horizon]).any()
+
+
+def test_a_channel_that_is_never_measured_does_not_veto_every_origin(toy_site) -> None:
+    # ROBOD measures no doorway flow at all. That is a property of the dataset, not of any
+    # origin, and judging origins against it would reject the entire test window.
+    panel = toy_site.to_panel()
+    series = panel.series.copy()
+    series[3:, :] = np.nan
+    dead = Panel(
+        series=series,
+        series_ids=panel.series_ids,
+        timestamps=panel.timestamps,
+        past_covariates=None,
+        past_covariate_ids=[],
+        future_covariates=None,
+        future_covariate_ids=[],
+        interval_seconds=panel.interval_seconds,
+        site_id=panel.site_id,
+    )
+    plan = _plan_over(dead, require_observed=True)
+    assert len(plan) == len(_plan_over(dead))
+    assert plan.dropped == {}
+
+
+def test_a_record_with_nothing_observed_refuses_rather_than_returning_nothing(
+    toy_site,
+) -> None:
+    panel = _holed(toy_site.to_panel(), slice(None))
+    with pytest.raises(ProtocolError, match="no window with both a full context"):
+        _plan_over(panel, require_observed=True)
+
+
+def test_capping_keeps_usable_origins_not_candidates(toy_site) -> None:
+    # Thinning has to come after the eligibility filter, or a capped run over a gappy
+    # record would spend most of its budget on holes.
+    panel = _holed(toy_site.to_panel(), slice(205, 232))
+    plan = _plan_over(panel, require_observed=True, max_origins=5)
+    assert len(plan) == 5
+    for task in plan:
+        assert np.isfinite(panel.series[:, task.origin : task.origin + task.horizon]).any()
+
+
 def test_paired_losses_refuse_an_unknown_method(toy_result) -> None:
     with pytest.raises(Exception, match="not in the metrics"):
         paired_losses(toy_result.metrics, "last_value+none", "nonexistent")

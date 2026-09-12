@@ -88,6 +88,10 @@ class ProtocolConfig(BaseModel):
     quantiles: list[float] = Field(min_length=2)
     split: tuple[float, float, float] = (0.6, 0.2, 0.2)
     max_origins: int | None = Field(default=None, gt=0)
+    #: Drop origins whose context or target is too empty to evaluate, recording each one.
+    #: Required for records collected in blocks, such as ROBOD; left off for simulated
+    #: sites, where a dropped origin would mean a bug rather than a hole in the record.
+    require_observed: bool = False
     #: Seasonal lag for the MASE denominator, in steps. ``None`` means one day.
     mase_season: int | None = Field(default=None, gt=0)
 

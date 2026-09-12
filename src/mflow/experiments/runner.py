@@ -154,6 +154,31 @@ def prepare_site(
     }
 
 
+def _check_reconcilable(site: SiteData, variant: ResolvedVariant) -> None:
+    """Refuse to reconcile a site whose flows were never measured.
+
+    Every reconciler works from the conservation identity, which relates a node's change
+    in occupancy to the flows across its doors. ROBOD counts people in rooms and nothing
+    at the doorways, so on that site the identity has no observed terms: a reconciler
+    would project onto a constraint built entirely from the forecaster's own guesses, and
+    the resulting coherence residual would measure the forecaster's self-consistency
+    rather than its agreement with the building. Running it and reporting the number
+    would be worse than not running it, so the run stops here and says why.
+    """
+    reconcilers = {name for _method, name in variant.cells()} - {"none"}
+    if not reconcilers:
+        return
+    measured = site.flow["count"].notna().any()
+    if not measured:
+        raise RunnerError(
+            f"site {site.meta.site_id!r} records no doorway flow at all, so the "
+            f"conservation identity has no observed terms and reconciler(s) "
+            f"{sorted(reconcilers)} have nothing to reconcile against. Use "
+            "`reconcilers: [none]` for this site, or evaluate the constraint machinery "
+            "on a site that measures flow."
+        )
+
+
 def _panels(
     observed_site: SiteData, truth_site: SiteData, variant: ResolvedVariant
 ) -> tuple[Panel, Panel]:
@@ -176,6 +201,7 @@ def _plan_for(config: ExperimentConfig, panel: Panel) -> RollingOriginPlan:
         quantiles=protocol.quantiles,
         fractions=protocol.split,
         max_origins=protocol.max_origins,
+        require_observed=protocol.require_observed,
     )
 
 
@@ -221,6 +247,7 @@ def run_one(
 
     set_global_seed(seed)
     truth_site = load_site(site_path)
+    _check_reconcilable(truth_site, variant)
     observed_site, provenance = prepare_site(truth_site, variant, seed=seed)
     observed, truth = _panels(observed_site, truth_site, variant)
     plan = _plan_for(config, observed)
@@ -232,6 +259,11 @@ def run_one(
         "protocol": config.protocol.model_dump(),
         "provenance": provenance,
         "n_origins": len(plan),
+        # Recorded separately so that a run over a record with holes in it cannot look
+        # like a run over a complete one with a longer stride.
+        "n_origins_enumerated": len(plan) + len(plan.dropped),
+        "n_origins_dropped": len(plan.dropped),
+        "dropped_reasons": plan.describe()["dropped_reasons"],
     }
     manifest = RunManifest.create(
         experiment=config.id,

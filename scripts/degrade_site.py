@@ -18,7 +18,7 @@ from pathlib import Path
 import numpy as np
 
 from mflow.paths import canonical_dir, configs_dir
-from mflow.schema import load_site, write_site
+from mflow.schema import SiteData, load_site, write_site
 from mflow.sensors import co2_lag_minutes, degrade, load_sensor_profile
 
 
@@ -48,7 +48,7 @@ def main() -> None:
     print(json.dumps(summary, indent=2, default=float))
 
 
-def _environment_diagnostics(clean, observed) -> dict[str, float]:
+def _environment_diagnostics(clean: SiteData, observed: SiteData) -> dict[str, float]:
     """Median CO2 lag and correlation across nodes, for checking against the literature."""
     covariates = observed.covariates_past
     co2 = covariates[covariates["variable"] == "co2_ppm"]

@@ -4,8 +4,10 @@ myenv/
 .env
 
 # Never commit data or results: both are reproduced from scripts and manifests.
-data/
-results/
+# Anchored to the repository root. Unanchored, `data/` would also match the source
+# package src/mflow/data/ and quietly keep the adapters out of every commit.
+/data/
+/results/
 
 # Source documents
 *.docx

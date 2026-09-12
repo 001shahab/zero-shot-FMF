@@ -27,7 +27,7 @@ from mflow.experiments import (
     run_experiment,
 )
 from mflow.paths import configs_dir
-from mflow.schema import load_site, write_site
+from mflow.schema import SiteData, load_site, write_site
 
 SHIPPED = sorted(configs_dir("experiments").glob("*.yaml"))
 
@@ -482,3 +482,81 @@ def test_an_unloadable_site_fails_before_any_results_are_created(tmp_path, toy_s
             allow_dirty=True,
         )
     assert not results.exists()
+
+
+def test_a_site_without_measured_flow_cannot_be_reconciled(tmp_path, toy_data) -> None:
+    # ROBOD counts people in rooms and nothing at the doorways. Reconciling there would
+    # project onto a constraint built entirely from the forecaster's own predicted flows,
+    # so the coherence residual would measure self-consistency rather than agreement with
+    # the building. The run has to stop and say that, not produce a number.
+    site = load_site(toy_data / "toy")
+    flowless = SiteData(
+        meta=site.meta.model_copy(update={"has_ground_truth_flow": False}),
+        nodes=site.nodes,
+        edges=site.edges,
+        occupancy=site.occupancy,
+        flow=site.flow.assign(count=np.nan),
+        covariates_past=site.covariates_past,
+        covariates_future=site.covariates_future,
+    )
+    write_site(flowless, toy_data / "toy")
+
+    with pytest.raises(RunnerError, match="records no doorway flow at all"):
+        run_experiment(
+            write_config(tmp_path, reconcilers=["none", "proposed"]),
+            data_root=toy_data,
+            results_root=tmp_path / "results",
+            allow_dirty=True,
+        )
+
+    # The unreconciled arm is still perfectly runnable on such a site.
+    outcomes = run_experiment(
+        write_config(tmp_path / "b", reconcilers=["none"]),
+        data_root=toy_data,
+        results_root=tmp_path / "results",
+        allow_dirty=True,
+    )
+    assert len(outcomes) == 1
+
+
+def test_dropped_origins_reach_the_manifest(tmp_path, toy_data) -> None:
+    site = load_site(toy_data / "toy")
+    holed = SiteData(
+        meta=site.meta,
+        nodes=site.nodes,
+        edges=site.edges,
+        occupancy=site.occupancy.assign(
+            count=site.occupancy["count"].where(
+                site.occupancy["timestamp"] < site.occupancy["timestamp"].max()
+                - pd.Timedelta(minutes=25)
+            )
+        ),
+        flow=site.flow,
+        covariates_past=site.covariates_past,
+        covariates_future=site.covariates_future,
+    )
+    write_site(holed, toy_data / "toy", validate=False)
+
+    outcomes = run_experiment(
+        write_config(
+            tmp_path,
+            protocol={
+                "context_length": 20,
+                "horizons": [4],
+                "stride": 1,
+                "quantiles": [0.1, 0.5, 0.9],
+                "mase_season": 60,
+                "require_observed": True,
+            },
+        ),
+        data_root=toy_data,
+        results_root=tmp_path / "results",
+        allow_dirty=True,
+    )
+    manifest = json.loads(
+        (outcomes[0].directory / "manifest.json").read_text(encoding="utf-8")
+    )
+    # A run over a gappy record evaluates on fewer origins than its stride implies, and
+    # the reader of the results has to be able to see that from the manifest alone.
+    assert manifest["config"]["n_origins_dropped"] > 0
+    assert manifest["config"]["n_origins"] < manifest["config"]["n_origins_enumerated"]

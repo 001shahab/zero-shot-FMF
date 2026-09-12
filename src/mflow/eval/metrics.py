@@ -109,8 +109,16 @@ def seasonal_naive_scale(training: np.ndarray, season_length: int) -> np.ndarray
             f"{season_length}"
         )
     differences = np.abs(training[:, season_length:] - training[:, :-season_length])
-    with np.errstate(invalid="ignore"):
-        scale = np.nanmean(differences, axis=1)
+    # The mean is taken by hand rather than with nanmean because a real site can carry a
+    # channel that was never measured at all -- ROBOD records no doorway flows -- and
+    # nanmean warns about the resulting empty slice instead of simply saying "no
+    # denominator here". NaN is the right answer and :func:`mase` already drops it.
+    observed = np.isfinite(differences)
+    counts = observed.sum(axis=1)
+    totals = np.where(observed, differences, 0.0).sum(axis=1)
+    scale = np.divide(
+        totals, counts, out=np.full(counts.shape, np.nan, dtype=float), where=counts > 0
+    )
     return np.where(scale > 0.0, scale, np.nan)
 
 
