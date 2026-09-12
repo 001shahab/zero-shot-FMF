@@ -1,0 +1,55 @@
+# A small house museum: eight rooms on a single circulation loop with one staircase.
+# Modelled on the scale of a preserved artist's or writer's house -- a few hundred
+# visitors a day, tight rooms, and a stair that becomes the bottleneck on busy afternoons.
+site_id: sim_house_museum
+timezone: Europe/Rome
+interval_seconds: 60
+step_seconds: 10
+
+nodes:
+  - {id: outside,     name: Outside,          kind: outside,   area_m2: 0,   capacity_persons: 0,  interest: 0.0}
+  - {id: entrance,    name: Entrance hall,    kind: entrance,  area_m2: 45,  capacity_persons: 30, interest: 0.4, ceiling_height_m: 4.5}
+  - {id: parlour,     name: Parlour,          kind: gallery,   area_m2: 38,  capacity_persons: 18, interest: 1.2, ceiling_height_m: 3.8}
+  - {id: dining,      name: Dining room,      kind: gallery,   area_m2: 32,  capacity_persons: 15, interest: 0.9, ceiling_height_m: 3.8}
+  - {id: stair,       name: Main staircase,   kind: stair,     area_m2: 18,  capacity_persons: 10, interest: 0.2, ceiling_height_m: 6.0}
+  - {id: study,       name: Study,            kind: gallery,   area_m2: 26,  capacity_persons: 12, interest: 1.8, ceiling_height_m: 3.4}
+  - {id: bedroom,     name: Bedroom,          kind: gallery,   area_m2: 30,  capacity_persons: 14, interest: 1.5, ceiling_height_m: 3.4}
+  - {id: corridor,    name: Upper corridor,   kind: corridor,  area_m2: 22,  capacity_persons: 14, interest: 0.3, ceiling_height_m: 3.2}
+  - {id: shop,        name: Shop,             kind: gallery,   area_m2: 28,  capacity_persons: 16, interest: 0.7, ceiling_height_m: 3.6}
+
+edges:
+  - {id: e_door,     src: outside,  dst: entrance, width_m: 2.2, capacity_persons_per_min: 50, traversal_seconds: 10}
+  - {id: e_ent_par,  src: entrance, dst: parlour,  width_m: 1.4, capacity_persons_per_min: 28, traversal_seconds: 12}
+  - {id: e_par_din,  src: parlour,  dst: dining,   width_m: 1.2, capacity_persons_per_min: 24, traversal_seconds: 12}
+  - {id: e_din_sta,  src: dining,   dst: stair,    width_m: 1.1, capacity_persons_per_min: 18, traversal_seconds: 15}
+  # The staircase is the deliberate bottleneck: narrow, and everyone upstairs uses it.
+  - {id: e_sta_cor,  src: stair,    dst: corridor, width_m: 1.0, capacity_persons_per_min: 14, traversal_seconds: 25}
+  - {id: e_cor_stu,  src: corridor, dst: study,    width_m: 0.9, capacity_persons_per_min: 16, traversal_seconds: 10}
+  - {id: e_cor_bed,  src: corridor, dst: bedroom,  width_m: 0.9, capacity_persons_per_min: 16, traversal_seconds: 10}
+  - {id: e_ent_shp,  src: entrance, dst: shop,     width_m: 1.6, capacity_persons_per_min: 30, traversal_seconds: 10}
+
+suggested_route: [entrance, parlour, dining, stair, corridor, study, bedroom, shop]
+
+arrivals:
+  open_time: "10:00"
+  close_time: "18:00"
+  peak_rate_per_min: 1.6
+  # Eight opening hours: a slow start, a lunchtime dip, a strong mid-afternoon peak.
+  hourly_profile: [0.25, 0.55, 0.80, 0.60, 0.95, 1.00, 0.70, 0.30]
+  weekday_multiplier: [0.0, 0.8, 0.85, 0.9, 1.1, 1.6, 1.5]
+  entrances: {entrance: 1.0}
+
+style_mix: {ant: 0.30, fish: 0.20, butterfly: 0.35, grasshopper: 0.15}
+
+groups:
+  - {id: school_morning, time: "10:30", size_mean: 24, size_sd: 4, cohesion: 0.9, guided: true,  weekdays: [1, 2, 3, 4], entrance: entrance}
+  - {id: tour_afternoon, time: "15:00", size_mean: 14, size_sd: 3, cohesion: 0.8, guided: true,  entrance: entrance}
+  - {id: coach_weekend,  time: "11:15", size_mean: 32, size_sd: 6, cohesion: 0.6, guided: false, weekdays: [5, 6], entrance: entrance}
+
+base_dwell_minutes: 2.2
+fatigue_per_minute: 0.010
+
+targets:
+  mean_visit_minutes: [20.0, 70.0]
+  node_visit_fraction: [0.35, 0.95]
+  occupancy_peak_to_mean: [1.4, 5.0]

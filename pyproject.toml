@@ -102,7 +102,9 @@ ignore = [
 known-first-party = ["mflow"]
 
 [tool.mypy]
-python_version = "3.11"
+# The pinned numpy ships stubs that use PEP 695 `type` statements, which mypy will only
+# parse when told to target 3.12 or later. The runtime floor stays at 3.11.
+python_version = "3.12"
 files = ["src/mflow"]
 strict_equality = true
 warn_redundant_casts = true

@@ -28,8 +28,8 @@ import numpy as np
 
 from mflow.reconcile.constraints import ConstraintSystem
 from mflow.reconcile.projection import (
-    ReconciliationResult,
     Reconciler,
+    ReconciliationResult,
     sigma_from_quantiles,
 )
 
@@ -128,7 +128,7 @@ class QuantileReconciler:
             reconciled_levels.append(level_result.reconciled)
             if index == median_index:
                 median_result = level_result
-        assert median_result is not None  # noqa: S101 - median_index is always visited
+        assert median_result is not None
         stacked = np.stack(reconciled_levels, axis=-1)
         return enforce_monotone(stacked), median_result
 

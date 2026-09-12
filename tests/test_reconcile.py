@@ -238,7 +238,7 @@ def test_sigma_from_quantiles_uses_the_normal_equivalent_spread() -> None:
 
 
 def test_sigma_needs_the_outer_quantiles() -> None:
-    with pytest.raises(ValueError, match="0.1 and 0.9"):
+    with pytest.raises(ValueError, match=r"0\.1 and 0\.9"):
         sigma_from_quantiles(np.zeros((1, 1, 3)), (0.25, 0.5, 0.75))
 
 

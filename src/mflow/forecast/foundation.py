@@ -46,8 +46,8 @@ import numpy as np
 
 from mflow.forecast.base import (
     DEFAULT_QUANTILES,
-    ForecastError,
     Forecaster,
+    ForecastError,
     validate_quantiles,
 )
 from mflow.profiling import measure
@@ -390,13 +390,15 @@ class TimesFM3MultivariateCovariates(_TimesFM3Base):
                 f"{self.name} needs {horizon} steps of known-future covariates, the panel "
                 f"provides {available}"
             )
-        rows = range(len(panel.future_covariate_ids))
+        rows = list(range(len(panel.future_covariate_ids)))
         if self.covariate_subset is not None:
             missing = set(self.covariate_subset) - set(panel.future_covariate_ids)
             if missing:
-                raise ForecastError(f"{self.name}: covariates {sorted(missing)} are not in the panel")
+                raise ForecastError(
+                    f"{self.name}: covariates {sorted(missing)} are not in the panel"
+                )
             rows = [panel.future_covariate_ids.index(c) for c in self.covariate_subset]
-        block = panel.future_covariates[list(rows), :]
+        block = panel.future_covariates[rows, :]
         # Trim the context part to the truncated window, then keep exactly `horizon`
         # future columns so the model can infer the horizon from the covariate width.
         context_len = min(panel.n_timesteps, self.max_context)
@@ -666,7 +668,11 @@ class Chronos2(_ZeroShotForecaster):
         columns = [str(level) for level in levels]
         if self.multivariate:
             for i, sid in enumerate(panel.series_ids):
-                rows = predictions[predictions["target"] == sid] if "target" in predictions else predictions
+                rows = (
+                    predictions[predictions["target"] == sid]
+                    if "target" in predictions
+                    else predictions
+                )
                 out[i] = rows[columns].to_numpy()[:horizon]
         else:
             for i, sid in enumerate(panel.series_ids):

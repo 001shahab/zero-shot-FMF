@@ -1,0 +1,41 @@
+name: harsh
+description: >
+  A stress condition rather than a deployment anyone would tolerate: about a quarter of
+  the record missing, counters biased by tens of per cent, and clocks several minutes
+  out. Nothing here is claimed to match a published installation. It exists to find where
+  the reconciliation stops helping, which is a result worth reporting either way.
+
+counting:
+  base_miss_probability: 0.12
+  congestion_miss_probability: 0.25
+  congestion_reference: 10.0
+  double_count_probability: 0.06
+  bias_sigma: 0.12
+
+environment:
+  enabled: true
+  ceiling_height_m: 4.0
+  air_changes_per_hour: 0.5
+  co2_generation_l_per_s: 0.0060
+  outdoor_co2_ppm: 440.0
+  co2_noise_ppm: 40.0
+  co2_noise_fraction: 0.06
+  co2_offset_ppm: 100.0
+  co2_response_seconds: 180.0
+  baseline_temperature_c: 21.0
+  baseline_humidity_pct: 50.0
+  sensible_heat_w: 73.0
+  latent_heat_w: 59.0
+  # Most of the occupant heat and moisture is removed by conditioning that has largely given up.
+  hvac_rejection_fraction: 0.30
+  temperature_noise_c: 1.5
+  humidity_noise_pct: 10.0
+
+faults:
+  # Mean outage about two hours, long-run unavailability about 25%.
+  dropout_enter_probability: 0.0028
+  dropout_exit_probability: 0.0083
+  stuck_enter_probability: 0.003
+  stuck_exit_probability: 0.025
+  clock_skew_intervals: 5.0
+  clock_drift_intervals: 5.0

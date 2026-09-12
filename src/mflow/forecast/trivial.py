@@ -20,8 +20,8 @@ import pandas as pd
 
 from mflow.forecast.base import (
     DEFAULT_QUANTILES,
-    ForecastError,
     Forecaster,
+    ForecastError,
     fill_context,
     season_length,
     validate_quantiles,
@@ -155,7 +155,7 @@ class HistoricalAverage(_EmpiricalResidualMixin, Forecaster):
         future = pd.date_range(
             panel.timestamps[-1] + step, periods=horizon, freq=step, tz=panel.timestamps.tz
         )
-        stamps = panel.timestamps.append(future)
+        stamps = pd.DatetimeIndex(panel.timestamps.append(future))
 
         seconds_of_day = (
             stamps.hour.to_numpy() * 3600

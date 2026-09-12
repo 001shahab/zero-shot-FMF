@@ -11,6 +11,7 @@ special cases into the metrics code, which is where silent bugs become published
 
 from __future__ import annotations
 
+import itertools
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from typing import Any, Final
@@ -146,7 +147,7 @@ def validate_quantiles(quantiles: Sequence[float]) -> tuple[float, ...]:
         raise ValueError("at least one quantile level is required")
     if any(not 0.0 < q < 1.0 for q in levels):
         raise ValueError(f"quantile levels must lie strictly inside (0, 1), got {levels}")
-    if any(b <= a for a, b in zip(levels, levels[1:], strict=False)):
+    if any(b <= a for a, b in itertools.pairwise(levels)):
         raise ValueError(f"quantile levels must be strictly ascending, got {levels}")
     return levels
 

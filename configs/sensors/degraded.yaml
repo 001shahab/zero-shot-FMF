@@ -1,0 +1,44 @@
+name: degraded
+description: >
+  An ageing installation nobody has recalibrated: counters at the pessimistic end of the
+  published error range, CO2 sensors at their end-of-life drift, and roughly one stream
+  in twelve unavailable at any moment. This is the condition the robustness experiment
+  asks about, and the one where topology-constrained reconciliation should earn its keep.
+
+counting:
+  # Cokbas et al. (2020) report their worst high-activity sequence at 75.3% correct
+  # classification; this profile sits near that bound once a doorway is busy.
+  base_miss_probability: 0.07
+  congestion_miss_probability: 0.18
+  congestion_reference: 15.0
+  double_count_probability: 0.03
+  bias_sigma: 0.06
+
+environment:
+  enabled: true
+  ceiling_height_m: 4.0
+  air_changes_per_hour: 1.0
+  co2_generation_l_per_s: 0.0060
+  outdoor_co2_ppm: 430.0
+  co2_noise_ppm: 20.0
+  co2_noise_fraction: 0.03
+  # Sensirion SCD30 accuracy drift over lifetime: +/-50 ppm.
+  co2_offset_ppm: 50.0
+  co2_response_seconds: 60.0
+  baseline_temperature_c: 21.0
+  baseline_humidity_pct: 50.0
+  sensible_heat_w: 73.0
+  latent_heat_w: 59.0
+  # Most of the occupant heat and moisture is removed by plant that no longer keeps up on a busy afternoon.
+  hvac_rejection_fraction: 0.60
+  temperature_noise_c: 0.8
+  humidity_noise_pct: 5.0
+
+faults:
+  # Mean outage about an hour, long-run unavailability about 8%.
+  dropout_enter_probability: 0.0015
+  dropout_exit_probability: 0.017
+  stuck_enter_probability: 0.001
+  stuck_exit_probability: 0.033
+  clock_skew_intervals: 2.0
+  clock_drift_intervals: 2.0

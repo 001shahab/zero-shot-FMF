@@ -28,11 +28,10 @@ conservation constraints.
 
 from __future__ import annotations
 
-import json
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Final, Literal
+from typing import Any, Final, Literal, cast
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import numpy as np
@@ -191,7 +190,9 @@ class SiteMeta(BaseModel):
                 raise ValueError(f"opening_hours[{day!r}] must be null or [open, close]")
             for stamp in hours:
                 hh, _, mm = stamp.partition(":")
-                if not (hh.isdigit() and mm.isdigit() and 0 <= int(hh) <= 23 and 0 <= int(mm) <= 59):
+                if not (
+                    hh.isdigit() and mm.isdigit() and 0 <= int(hh) <= 23 and 0 <= int(mm) <= 59
+                ):
                     raise ValueError(f"opening_hours[{day!r}] entry {stamp!r} is not HH:MM")
         return value
 
@@ -468,7 +469,7 @@ class SiteData:
             extra = pd.date_range(
                 timestamps[-1] + step, periods=horizon, freq=step, tz=timestamps.tz
             )
-            fut_index = timestamps.append(extra)
+            fut_index = pd.DatetimeIndex(timestamps.append(extra))
         future_wide = self.wide_covariates("future")
         if not future_wide.empty:
             missing = fut_index.difference(pd.DatetimeIndex(future_wide.index))
@@ -588,14 +589,17 @@ def write_site(site: SiteData, path: str | Path, *, validate: bool = True) -> Pa
     site.nodes[list(NODE_COLUMNS)].to_csv(root / NODES_FILE, index=False)
     site.edges[list(EDGE_COLUMNS)].to_csv(root / EDGES_FILE, index=False)
 
+    # Counts are nullable integers on disk. People are countable, so a float column would
+    # invite silently fractional occupancy, but a sensor that drops out has no reading at
+    # all and that gap has to survive the round trip rather than become a zero.
     occ = site.occupancy[["timestamp", "node_id", "count"]].copy()
-    occ["count"] = occ["count"].astype("int32")
+    occ["count"] = occ["count"].astype("Int32")
     occ.sort_values(["timestamp", "node_id"]).reset_index(drop=True).to_parquet(
         root / OCCUPANCY_FILE, index=False
     )
 
     flw = site.flow[["timestamp", "edge_id", "count"]].copy()
-    flw["count"] = flw["count"].astype("int32")
+    flw["count"] = flw["count"].astype("Int32")
     flw.sort_values(["timestamp", "edge_id"]).reset_index(drop=True).to_parquet(
         root / FLOW_FILE, index=False
     )
@@ -628,6 +632,10 @@ def _read_counts(path: Path, key: str) -> pd.DataFrame:
             raise SiteValidationError(f"{path} is missing column {column!r}")
     frame = frame[["timestamp", key, "count"]].copy()
     frame[key] = frame[key].astype(str)
+    # Counts are float in memory whatever their on-disk dtype, so that a dropped reading
+    # is a NaN every consumer already knows how to see rather than a pandas NA that only
+    # some of them do.
+    frame["count"] = frame["count"].astype("float64")
     frame["timestamp"] = _as_utc(frame["timestamp"], path)
     return frame
 
@@ -764,9 +772,12 @@ def _validate_edges(data: SiteData, root: Path) -> None:
         _fail(root, f"edges must have positive capacity_persons_per_min: {_sample(nonpositive)}")
 
     known_edges = set(edges["edge_id"].astype(str))
-    reverse = dict(zip(edges["edge_id"], edges["reverse_edge_id"], strict=True))
+    reverse = {
+        str(edge_id): ("" if pd.isna(rev) else str(rev))
+        for edge_id, rev in zip(edges["edge_id"], edges["reverse_edge_id"], strict=True)
+    }
     for edge_id, rev in reverse.items():
-        if pd.isna(rev) or rev == "":
+        if rev == "":
             continue
         if rev not in known_edges:
             _fail(root, f"edge {edge_id!r} has reverse_edge_id {rev!r} which does not exist")
@@ -912,7 +923,7 @@ def _validate_values(data: SiteData, root: Path) -> None:
             excess=pd.to_numeric(over["count"]) - over["node_id"].map(capacity)
         ).nlargest(3, "excess")
         detail = ", ".join(
-            f"{row.node_id}@{row.timestamp}: {row.count} > {capacity[row.node_id]:g}"
+            f"{row.node_id}@{row.timestamp}: {row.count} > {capacity[str(row.node_id)]:g}"
             for row in worst.itertuples()
         )
         _fail(root, f"occupancy exceeds node capacity in {len(over)} rows ({detail})")
@@ -974,11 +985,11 @@ def _validate_conservation(data: SiteData, root: Path, tolerance: float) -> None
     worst = float(np.nanmax(np.abs(residual.to_numpy())))
     if worst > tolerance:
         stacked = residual.stack()
-        offender = stacked.abs().idxmax()
+        worst_time, worst_node = cast("tuple[Any, Any]", stacked.abs().idxmax())
         _fail(
             root,
             f"conservation residual {worst:.6g} exceeds tolerance {tolerance:g}; worst at "
-            f"node {offender[1]!r} time {offender[0]} "
+            f"node {worst_node!r} time {worst_time} "
             f"({int((residual.abs() > tolerance).to_numpy().sum())} violating cells)",
         )
 

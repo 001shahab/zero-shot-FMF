@@ -26,7 +26,7 @@ import scipy.linalg as sla
 import scipy.sparse as sp
 
 from mflow.reconcile.constraints import ConstraintSystem, flatten, unflatten
-from mflow.reconcile.projection import ReconciliationResult, Reconciler
+from mflow.reconcile.projection import Reconciler, ReconciliationResult
 
 
 class MinTReconciler(Reconciler):

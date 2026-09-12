@@ -1,0 +1,59 @@
+name: realistic
+description: >
+  A well-maintained installation of commodity hardware, which is what a heritage site
+  that has already invested in visitor analytics actually has. Counting errors sit at the
+  low end of the published range, environmental sensors perform to their datasheets, and
+  streams fail occasionally rather than constantly. This is the default profile for the
+  headline experiments.
+
+counting:
+  # Gruber et al. (2014) measured directional errors of 3.3% and 7.2% for an overhead
+  # stereoscopic camera over 36 days of free people flow; Gade et al. (2016) report 95.4%
+  # and 99.1% success under heavy occlusion.
+  base_miss_probability: 0.03
+  # Cokbas et al. (2020): "typically 80-90% entry and exit events are correctly
+  # classified" across challenging scenarios. The congestion term takes the total miss
+  # rate to 15% when 20 people cross a doorway within one minute.
+  congestion_miss_probability: 0.12
+  congestion_reference: 20.0
+  double_count_probability: 0.01
+  # The same unit under-counts one direction and over-counts the other in Gruber et al.,
+  # which is a fixed per-sensor bias rather than noise.
+  bias_sigma: 0.02
+
+environment:
+  enabled: true
+  ceiling_height_m: 4.0
+  # ASHRAE 62.1 Table 6-1 for museums/galleries implies about 1 air change per hour of
+  # outdoor air at the default occupant density; real installations run above the
+  # minimum.
+  air_changes_per_hour: 2.0
+  # Persily and de Jonge (2017), between "standing quietly" and "walking, very slow".
+  co2_generation_l_per_s: 0.0060
+  outdoor_co2_ppm: 420.0
+  # Sensirion SCD30 datasheet: repeatability +/-10 ppm RMS, accuracy +/-(30 ppm + 3% MV),
+  # response time tau_63 20 s.
+  co2_noise_ppm: 10.0
+  co2_noise_fraction: 0.01
+  co2_offset_ppm: 30.0
+  co2_response_seconds: 20.0
+  baseline_temperature_c: 21.0
+  baseline_humidity_pct: 50.0
+  # ASHRAE Fundamentals Ch. 18 Table 4, "Standing, light work; walking".
+  sensible_heat_w: 73.0
+  latent_heat_w: 59.0
+  # Most of the occupant heat and moisture is removed by a tightly controlled conservation environment.
+  hvac_rejection_fraction: 0.85
+  # SCD30 typical accuracy: 0.4 C and 3 %RH.
+  temperature_noise_c: 0.3
+  humidity_noise_pct: 2.0
+
+faults:
+  # Two-state Markov chain on a one-minute grid: mean outage about 30 minutes, long-run
+  # unavailability about 1.5%.
+  dropout_enter_probability: 0.0005
+  dropout_exit_probability: 0.033
+  stuck_enter_probability: 0.00015
+  stuck_exit_probability: 0.05
+  clock_skew_intervals: 0.5
+  clock_drift_intervals: 0.5

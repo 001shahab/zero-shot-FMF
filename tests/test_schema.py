@@ -126,19 +126,25 @@ def test_rejects_unknown_node_reference(corrupt: Corrupter) -> None:
 
 
 def test_rejects_unknown_edge_reference(corrupt: Corrupter) -> None:
-    site = corrupt("flow.parquet", lambda df: df.assign(edge_id=df["edge_id"].replace("e_ab", "e_x")))
+    site = corrupt(
+        "flow.parquet", lambda df: df.assign(edge_id=df["edge_id"].replace("e_ab", "e_x"))
+    )
     with pytest.raises(SiteValidationError, match="unknown edge ids"):
         validate_site(site)
 
 
 def test_rejects_edge_to_missing_node(corrupt: Corrupter) -> None:
-    site = corrupt("edges.csv", lambda df: df.assign(dst_node=df["dst_node"].replace("gallery_b", "nowhere")))
+    site = corrupt(
+        "edges.csv",
+        lambda df: df.assign(dst_node=df["dst_node"].replace("gallery_b", "nowhere")),
+    )
     with pytest.raises(SiteValidationError, match="references unknown nodes"):
         validate_site(site)
 
 
 def test_rejects_missing_timestamp_in_grid(corrupt: Corrupter) -> None:
-    drop = sorted(pd.read_parquet(Path("tests/fixtures/toy_site") / OCCUPANCY_FILE)["timestamp"].unique())[100]
+    stamps = pd.read_parquet(Path("tests/fixtures/toy_site") / OCCUPANCY_FILE)["timestamp"]
+    drop = sorted(stamps.unique())[100]
     site = corrupt(OCCUPANCY_FILE, lambda df: df[df["timestamp"] != drop])
     corrupt("flow.parquet", lambda df: df[df["timestamp"] != drop])
     with pytest.raises(SiteValidationError, match="regular 60s grid"):
@@ -184,7 +190,9 @@ def test_rejects_duplicate_rows(corrupt: Corrupter) -> None:
 
 
 def test_rejects_timezone_naive_timestamps(corrupt: Corrupter) -> None:
-    site = corrupt(OCCUPANCY_FILE, lambda df: df.assign(timestamp=df["timestamp"].dt.tz_localize(None)))
+    site = corrupt(
+        OCCUPANCY_FILE, lambda df: df.assign(timestamp=df["timestamp"].dt.tz_localize(None))
+    )
     with pytest.raises(SiteValidationError, match="timezone-naive"):
         validate_site(site)
 

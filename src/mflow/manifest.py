@@ -114,7 +114,7 @@ def _jsonable(value: Any) -> Any:
 
 def _git(*args: str) -> str | None:
     try:
-        out = subprocess.run(  # noqa: S603 - fixed argv, no shell
+        out = subprocess.run(
             ["git", *args],
             cwd=repo_root(),
             capture_output=True,

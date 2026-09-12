@@ -13,8 +13,8 @@ from typing import TYPE_CHECKING, Any
 
 from mflow.forecast.base import (
     DEFAULT_QUANTILES,
-    ForecastError,
     Forecaster,
+    ForecastError,
     LeakageError,
 )
 

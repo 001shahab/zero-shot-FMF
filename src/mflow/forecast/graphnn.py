@@ -35,15 +35,14 @@ from torch import Tensor, nn
 
 from mflow.forecast.base import (
     DEFAULT_QUANTILES,
-    ForecastError,
     Forecaster,
+    ForecastError,
     fill_context,
     validate_quantiles,
 )
 from mflow.graph import BuildingGraph
 from mflow.profiling import measure
 from mflow.schema import Panel
-
 
 # --------------------------------------------------------------------------- #
 # Graph operators
@@ -172,7 +171,9 @@ class ChebyshevConv(nn.Module):
         if self.k_order > 1:
             terms.append(torch.einsum("ij,bjtc->bitc", laplacian, signal))
         for k in range(2, self.k_order):
-            terms.append(2.0 * torch.einsum("ij,bjtc->bitc", laplacian, terms[k - 1]) - terms[k - 2])
+            terms.append(
+                2.0 * torch.einsum("ij,bjtc->bitc", laplacian, terms[k - 1]) - terms[k - 2]
+            )
         stacked = torch.stack(terms, dim=0)
         out = torch.einsum("kbitc,kcf->bitf", stacked, self.weight) + self.bias
         return out.permute(0, 3, 1, 2)

@@ -1,0 +1,40 @@
+name: clean
+description: >
+  Perfect instrumentation. Counts pass through untouched and no stream ever fails. This
+  is the control condition: any gap between it and the realistic profile is attributable
+  to measurement, not to the forecaster. Environmental channels are still generated,
+  because CO2 lagging occupancy is physics rather than a fault.
+
+counting:
+  base_miss_probability: 0.0
+  congestion_miss_probability: 0.0
+  congestion_reference: 20.0
+  double_count_probability: 0.0
+  bias_sigma: 0.0
+
+environment:
+  enabled: true
+  ceiling_height_m: 4.0
+  air_changes_per_hour: 2.0
+  co2_generation_l_per_s: 0.0060
+  outdoor_co2_ppm: 420.0
+  co2_noise_ppm: 0.0
+  co2_noise_fraction: 0.0
+  co2_offset_ppm: 0.0
+  co2_response_seconds: 20.0
+  baseline_temperature_c: 21.0
+  baseline_humidity_pct: 50.0
+  sensible_heat_w: 73.0
+  latent_heat_w: 59.0
+  # Most of the occupant heat and moisture is removed by a tightly controlled conservation environment.
+  hvac_rejection_fraction: 0.85
+  temperature_noise_c: 0.0
+  humidity_noise_pct: 0.0
+
+faults:
+  dropout_enter_probability: 0.0
+  dropout_exit_probability: 0.02
+  stuck_enter_probability: 0.0
+  stuck_exit_probability: 0.05
+  clock_skew_intervals: 0.0
+  clock_drift_intervals: 0.0
