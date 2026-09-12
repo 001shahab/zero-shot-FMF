@@ -43,7 +43,7 @@ TRACKED_PACKAGES: Final[tuple[str, ...]] = (
     "statsmodels",
     "timesfm",
     "chronos-forecasting",
-    "toto-ts",
+    "toto-models",
 )
 
 

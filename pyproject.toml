@@ -36,9 +36,9 @@ dependencies = [
 
 [project.optional-dependencies]
 # Foundation models. Installed separately because each pulls large weights.
-timesfm = ["timesfm>=3.0"]
+timesfm = ["timesfm>=3.0", "torch>=2.2"]
 chronos = ["chronos-forecasting>=2.0"]
-toto = ["toto-ts>=2.0"]
+toto = ["toto-models>=2.0"]
 # Tier B continuous-space simulation.
 continuous = ["jupedsim>=1.2"]
 dev = [
@@ -123,7 +123,9 @@ disallow_untyped_calls = false
 [tool.pytest.ini_options]
 minversion = "8.0"
 testpaths = ["tests"]
-addopts = "-q --strict-markers"
+# Tests needing downloaded weights or fetched datasets are opt-in: run them with
+# `pytest -m requires_weights` once the artefacts are in place.
+addopts = "-q --strict-markers -m 'not requires_weights and not requires_data'"
 markers = [
   "slow: long-running tests (simulator sweeps, solver stress tests)",
   "requires_weights: needs foundation model weights downloaded from the Hugging Face Hub",

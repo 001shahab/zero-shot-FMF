@@ -16,6 +16,7 @@ and edge ordering.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from functools import cached_property
 from typing import Literal
@@ -25,7 +26,7 @@ import numpy as np
 import pandas as pd
 import scipy.sparse as sp
 
-from mflow.schema import OUTSIDE_NODE, SiteData
+from mflow.schema import FLOW_PREFIX, OCC_PREFIX, OUTSIDE_NODE, SiteData
 
 
 class GraphError(ValueError):
@@ -231,6 +232,61 @@ class BuildingGraph:
         if self_loops:
             np.fill_diagonal(out, 1.0)
         return out.astype(np.float32)
+
+    def series_adjacency(
+        self,
+        series_ids: Sequence[str],
+        *,
+        symmetric: bool = True,
+        self_loops: bool = True,
+    ) -> np.ndarray:
+        """Adjacency over *series* rather than over nodes.
+
+        The graph baselines have to forecast the same targets as every other method, and
+        that set contains both node occupancy and edge flow. The building graph alone
+        cannot index a flow series, so the operator here is the standard augmentation of
+        a graph by its line graph: an occupancy series is adjacent to the occupancy
+        series of every neighbouring room, and a flow series is adjacent to the occupancy
+        series of the two rooms it connects and to the flow series that share those
+        rooms. The alternative -- running the baselines on occupancy only -- would make
+        them incomparable with the foundation models on the flow half of the table.
+
+        Args:
+            series_ids: canonical series order to build the operator for.
+            symmetric: fold direction, as the diffusion convolutions expect.
+            self_loops: put 1 on the diagonal.
+
+        Returns:
+            ``(n_series, n_series)`` float32.
+        """
+        index = {sid: i for i, sid in enumerate(series_ids)}
+        n = len(series_ids)
+        weights = np.zeros((n, n), dtype=np.float32)
+
+        def connect(a: str, b: str) -> None:
+            if a in index and b in index:
+                weights[index[a], index[b]] = 1.0
+
+        for edge, s, d in zip(self.edge_ids, self.src, self.dst, strict=True):
+            flow = f"{FLOW_PREFIX}{edge}"
+            connect(f"{OCC_PREFIX}{s}", f"{OCC_PREFIX}{d}")
+            connect(flow, f"{OCC_PREFIX}{s}")
+            connect(f"{OCC_PREFIX}{s}", flow)
+            connect(flow, f"{OCC_PREFIX}{d}")
+            connect(f"{OCC_PREFIX}{d}", flow)
+
+        for node in self.node_ids:
+            touching = [*self.in_edges[node], *self.out_edges[node]]
+            for a in touching:
+                for b in touching:
+                    if a != b:
+                        connect(f"{FLOW_PREFIX}{a}", f"{FLOW_PREFIX}{b}")
+
+        if symmetric:
+            weights = np.maximum(weights, weights.T)
+        if self_loops:
+            np.fill_diagonal(weights, 1.0)
+        return weights
 
     def to_networkx(self) -> nx.DiGraph:
         """Return the graph as a NetworkX object for topology queries and plotting."""
