@@ -1,0 +1,18 @@
+{
+  "site_id": "toy_three_room",
+  "interval_seconds": 60,
+  "timezone": "Europe/Rome",
+  "source": "simulated",
+  "has_ground_truth_flow": true,
+  "opening_hours": {
+    "mon": null,
+    "tue": [
+      "09:00",
+      "18:00"
+    ]
+  },
+  "provenance": {
+    "generator": "scripts/build_toy_fixture.py",
+    "seed": 20260912
+  }
+}

@@ -1,0 +1,5 @@
+node_id,name,kind,area_m2,capacity_persons
+outside,Outside,outside,0.0,0
+foyer,Entrance foyer,entrance,60.0,40
+gallery_a,Gallery A,gallery,120.0,60
+gallery_b,Gallery B,gallery,80.0,30

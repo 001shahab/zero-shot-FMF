@@ -1,0 +1,32 @@
+# Environments and secrets
+myenv/
+.venv/
+.env
+
+# Never commit data or results: both are reproduced from scripts and manifests.
+data/
+results/
+
+# Source documents
+*.docx
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Editors and OS
+.DS_Store
+.idea/
+*.swp
+
+# The toy fixture is deliberately committed: it is the reference implementation of the
+# data contract and the M1 acceptance tests depend on it.
+!tests/fixtures/toy_site/

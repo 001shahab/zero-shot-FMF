@@ -1,0 +1,7 @@
+edge_id,src_node,dst_node,width_m,capacity_persons_per_min,reverse_edge_id
+e_in,outside,foyer,2.4,60.0,e_out
+e_out,foyer,outside,2.4,60.0,e_in
+e_fa,foyer,gallery_a,1.6,40.0,e_af
+e_af,gallery_a,foyer,1.6,40.0,e_fa
+e_ab,gallery_a,gallery_b,1.2,25.0,e_ba
+e_ba,gallery_b,gallery_a,1.2,25.0,e_ab
