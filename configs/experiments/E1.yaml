@@ -1,0 +1,52 @@
+# E1 -- Does zero-shot forecasting work at all in this setting?
+#
+# Every method is given the same 24-hour context and asked for the same horizons. No
+# method is trained on the site. The question is whether a foundation model, handed a
+# museum occupancy series it has never seen, beats the baselines a building manager
+# would otherwise use.
+#
+# The stride is 60 steps (one hour). At the longest horizon the Diebold-Mariano test
+# needs roughly 2h+2 = 122 origins before the Harvey-Leybourne-Newbold correction is
+# defined; a 30-day record gives a test window of about 8600 steps, so 60 leaves ~143.
+# Coarsening the stride would silently cost the significance markers.
+
+id: E1
+question: >-
+  Does a zero-shot foundation model forecast museum occupancy and flow better than
+  the seasonal and classical baselines a building already has?
+
+sites:
+  - sim_house_museum
+  - sim_palazzo
+  - sim_national
+
+seeds: [0, 1, 2]
+
+protocol:
+  context_length: 1440      # 24 hours at one-minute sampling
+  horizons: [5, 15, 30, 60]
+  stride: 60
+  quantiles: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+  split: [0.6, 0.2, 0.2]
+
+sensor_profile: clean
+covariates: all
+reconcilers: [none]
+
+methods:
+  # Baselines. Seasonal-naive at a one-day season is the honest bar: a museum repeats
+  # itself daily and any method that cannot beat yesterday is not worth deploying.
+  - name: last_value
+  - name: seasonal_naive
+  - name: historical_average
+  - name: sarima
+  - name: ets
+  # Foundation models, univariate, so that E1 isolates the zero-shot claim from the
+  # multivariate and covariate claims that E2 tests separately.
+  - name: timesfm3_univariate
+  - name: timesfm25_univariate
+  - name: chronos2_univariate
+  - name: toto2
+
+notes:
+  reference_method: seasonal_naive+none

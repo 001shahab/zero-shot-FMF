@@ -1,0 +1,39 @@
+# A cheap end-to-end check that the installation works.
+#
+# Trivial forecasters only, one seed, one site, a handful of origins. It exercises every
+# stage -- site loading, sensor degradation, the rolling-origin plan, the reconciler, the
+# metrics, the risk heads and the manifest -- in under a minute and without downloading a
+# single model weight. It answers no research question and its output belongs in
+# results/, not in the paper.
+#
+#     mflow run configs/experiments/smoke.yaml --allow-dirty
+
+id: smoke
+question: Does the pipeline run end to end on this machine?
+
+sites:
+  - sim_house_museum
+
+seeds: [0]
+
+protocol:
+  context_length: 1440
+  horizons: [5, 15]
+  stride: 120
+  quantiles: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+  max_origins: 80
+  mase_season: 1440
+
+sensor_profile: realistic
+covariates: all
+reconcilers: [none, mint, proposed]
+
+methods:
+  - name: last_value
+  - name: seasonal_naive
+
+risk:
+  congestion_occupancy_fraction: 0.5
+  alert_probability: 0.4
+  anomaly_per_kind: 2
+  anomaly_duration: 2

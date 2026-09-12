@@ -14,24 +14,42 @@ projects the raw forecast onto the feasible set.
 
 from __future__ import annotations
 
-from mflow.reconcile.constraints import ConstraintSystem, build_constraints
+from mflow.reconcile.constraints import (
+    ConstraintError,
+    ConstraintSystem,
+    build_constraints,
+    build_constraints_cached,
+    flatten,
+    unflatten,
+)
 from mflow.reconcile.mint import MinTReconciler
 from mflow.reconcile.projection import (
     IdentityReconciler,
     ProjectionReconciler,
     Reconciler,
+    ReconcilerRegistry,
     ReconciliationResult,
+    default_registry,
+    sigma_from_quantiles,
 )
-from mflow.reconcile.quantiles import QuantileReconciler, enforce_monotone
+from mflow.reconcile.quantiles import QuantileReconciler, crossing_rate, enforce_monotone
 
 __all__ = [
+    "ConstraintError",
     "ConstraintSystem",
     "IdentityReconciler",
     "MinTReconciler",
     "ProjectionReconciler",
     "QuantileReconciler",
     "Reconciler",
+    "ReconcilerRegistry",
     "ReconciliationResult",
     "build_constraints",
+    "build_constraints_cached",
+    "crossing_rate",
+    "default_registry",
     "enforce_monotone",
+    "flatten",
+    "sigma_from_quantiles",
+    "unflatten",
 ]

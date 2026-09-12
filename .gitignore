@@ -30,3 +30,7 @@ htmlcov/
 # The toy fixture is deliberately committed: it is the reference implementation of the
 # data contract and the M1 acceptance tests depend on it.
 !tests/fixtures/toy_site/
+.mplcache/
+
+# Scratch directories created by dataset-format probes.
+.robod_probe/

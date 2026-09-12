@@ -1,0 +1,63 @@
+# E6 -- Does the forecast change a decision?
+#
+# A forecast that is 5% more accurate and changes nothing an operator does is not worth
+# deploying. Three decision heads are scored:
+#
+#   congestion  alert before a room reaches 80% of capacity, against a reactive detector
+#               that alerts only once the threshold is already exceeded. The reactive
+#               detector has perfect precision and zero lead time by construction, so
+#               every minute of lead time the forecast buys is the entire benefit.
+#   anomaly     inject a closed gallery that receives flow, an unexpected dwell cluster,
+#               and a stuck sensor; report detection rate and time to detect at a fixed
+#               1% false alarm budget. Pinning the false alarm rate is what stops a
+#               detector from looking good by alerting constantly.
+#   exposure    predicted cumulative visitor load per gallery per day against a budget.
+#               This head reports a FORMULATION AND A WORKED EXAMPLE ONLY. There is no
+#               dataset linking visitor load to a conservation outcome, so there is no
+#               validation claim to make, and the output carries that caveat in a column
+#               so it cannot be stripped by a table.
+#
+# The heads are scored against the clean site: an alert is right or wrong about what
+# really happened in the room, not about what the sensor reported. The sensor profile is
+# realistic so that the forecast itself is made under field conditions.
+
+id: E6
+question: >-
+  Does a reconciled probabilistic forecast let an operator act earlier, and detect more,
+  than the reactive monitoring a building already has?
+
+sites:
+  - sim_house_museum
+  - sim_palazzo
+
+seeds: [0, 1, 2]
+
+protocol:
+  context_length: 1440
+  horizons: [5, 15, 30, 60]
+  stride: 60
+  quantiles: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+
+sensor_profile: realistic
+covariates: all
+reconcilers: [none, proposed]
+
+methods:
+  - name: seasonal_naive
+  - name: timesfm3_multivariate
+  - name: chronos2_multivariate
+
+risk:
+  congestion_occupancy_fraction: 0.8
+  alert_probability: 0.5
+  anomaly_false_alarm_budget: 0.01
+  anomaly_kinds: [closed_gallery_flow, dwell_cluster, stuck_sensor]
+  anomaly_per_kind: 6
+  anomaly_duration: 5        # origins, i.e. 5 hours at a 60-step stride
+  exposure_headroom: 1.2
+
+notes:
+  reference_method: seasonal_naive+none
+  exposure_caveat: >-
+    The exposure head is a formulation and a worked example. It is not validated against
+    any conservation outcome and must not be reported as if it were.

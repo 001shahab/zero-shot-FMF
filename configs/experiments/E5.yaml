@@ -1,0 +1,54 @@
+# E5 -- How fast does each method degrade as the sensors get worse?
+#
+# Real museum instrumentation is not clean. Counters miss people in crowds, CO2 sensors
+# lag and drift, and everything drops out. The four profiles under configs/sensors/ span
+# the range from a laboratory installation to a neglected one, with every parameter taken
+# from a published error rate and cited in the module that consumes it.
+#
+# Models see the degraded series. They are scored against the clean ones. That asymmetry
+# is the whole experiment: it measures what the degradation costs, not how well a model
+# predicts its own noise.
+#
+# Reconciliation appears here because the conservation constraint is a source of
+# information that does not degrade. A counter can miscount, but people still cannot
+# leave a room without going through a door, and the projection is the only part of the
+# system that knows this. The interesting result is whether the gap between `none` and
+# `proposed` widens as the sensors get worse.
+
+id: E5
+question: >-
+  How does forecast accuracy degrade across realistic sensor quality regimes, and does
+  topology-constrained reconciliation recover more of the loss as the data gets worse?
+
+sites:
+  - sim_house_museum
+  - sim_palazzo
+
+seeds: [0, 1, 2]
+
+protocol:
+  context_length: 1440
+  horizons: [5, 15, 30, 60]
+  stride: 60
+  quantiles: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+
+covariates: all
+reconcilers: [none, proposed]
+
+methods:
+  - name: seasonal_naive
+  - name: timesfm3_multivariate
+  - name: chronos2_multivariate
+
+variants:
+  - label: clean
+    sensor_profile: clean
+  - label: realistic
+    sensor_profile: realistic
+  - label: degraded
+    sensor_profile: degraded
+  - label: harsh
+    sensor_profile: harsh
+
+notes:
+  reference_method: seasonal_naive+none

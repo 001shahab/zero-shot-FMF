@@ -1,0 +1,59 @@
+# E2 -- What do the other series and the known-future covariates buy?
+#
+# Three things are varied independently, because they are three different claims:
+#
+#   1. univariate vs multivariate: does seeing the other rooms help predict this one?
+#   2. no covariates vs calendar: does knowing the opening schedule and the booked
+#      groups help?
+#   3. no covariates vs environment: does the CO2 proxy help, given that it lags
+#      occupancy by tens of minutes?
+#
+# The covariate variants apply to every method in the list, including the ones that
+# ignore covariates. That is deliberate: a univariate baseline run under all four
+# conditions should produce four identical numbers, and if it does not, something is
+# leaking through a channel it was not supposed to see.
+
+id: E2
+question: >-
+  Does conditioning on the other series, on the opening schedule, or on the
+  environmental proxies improve a zero-shot forecast?
+
+sites:
+  - sim_house_museum
+  - sim_palazzo
+
+seeds: [0, 1, 2]
+
+protocol:
+  context_length: 1440
+  horizons: [5, 15, 30, 60]
+  stride: 60
+  quantiles: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+
+sensor_profile: clean
+reconcilers: [none]
+
+methods:
+  - name: seasonal_naive                          # control: ignores covariates entirely
+  - name: timesfm3_univariate
+  - name: timesfm3_multivariate
+  - name: timesfm3_multivariate_covariates
+  - name: chronos2_univariate
+  - name: chronos2_multivariate
+  - name: chronos2_multivariate_covariates
+
+variants:
+  - label: no_covariates
+    covariates: none
+  - label: calendar
+    covariates: calendar
+  - label: environment
+    covariates: environment
+  - label: all_covariates
+    covariates: all
+
+notes:
+  reference_method: timesfm3_univariate+none
+  control: >-
+    seasonal_naive must score identically across all four variants; a difference is a
+    covariate leaking into a method that should not see one.

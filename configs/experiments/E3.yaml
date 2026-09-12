@@ -1,0 +1,75 @@
+# E3 -- Does topology-constrained reconciliation help, and which part of it?
+#
+# This is the experiment the paper's contribution lives or dies by. Four reconcilers are
+# compared on the same forecasts:
+#
+#   none            the raw forecast, which is incoherent
+#   mint            MinT(Shrink), the standard hierarchical projection
+#   uniform_weight  the proposed projection with W = I -- the ablation that isolates
+#                   whether the uncertainty weighting is doing any work
+#   proposed        the proposed projection with W = diag(1/sigma^2)
+#
+# and the quantile strategy is varied separately, because carrying a point correction
+# through the fan by a shift and re-solving at each level are different methods with
+# different coherence guarantees.
+#
+# The method list below is the candidate set. The reported run uses the two strongest
+# forecasters from E1's main table, selected with `--variants`; running all of them is
+# also valid and simply costs more. Which two were used is recorded in every manifest,
+# so the table can never be ambiguous about it.
+
+id: E3
+question: >-
+  Does the uncertainty-weighted constrained projection improve accuracy as well as
+  coherence, relative to no reconciliation and to MinT(Shrink)?
+
+sites:
+  - sim_house_museum
+  - sim_palazzo
+  - sim_national
+
+seeds: [0, 1, 2]
+
+protocol:
+  context_length: 1440
+  horizons: [5, 15, 30, 60]
+  stride: 60
+  quantiles: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+
+sensor_profile: clean
+covariates: all
+reconcilers: [none, mint, uniform_weight, proposed]
+
+variants:
+  # Quantile strategy held at `shift`, forecaster varied.
+  - label: timesfm3
+    methods:
+      - name: timesfm3_multivariate
+    quantile_strategy: shift
+  - label: chronos2
+    methods:
+      - name: chronos2_multivariate
+    quantile_strategy: shift
+  - label: seasonal_naive
+    methods:
+      - name: seasonal_naive
+    quantile_strategy: shift
+
+  # Forecaster held fixed, quantile strategy varied. Only the projecting reconcilers
+  # appear here, since the strategy is meaningless without a projection.
+  - label: timesfm3_per_quantile
+    methods:
+      - name: timesfm3_multivariate
+    reconcilers: [mint, uniform_weight, proposed]
+    quantile_strategy: per_quantile
+  - label: chronos2_per_quantile
+    methods:
+      - name: chronos2_multivariate
+    reconcilers: [mint, uniform_weight, proposed]
+    quantile_strategy: per_quantile
+
+notes:
+  reference_method: seasonal_naive+none
+  selection: >-
+    The two forecaster variants reported in the paper are the top two by MAE in E1's
+    main table. Run E1 first.

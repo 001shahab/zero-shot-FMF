@@ -28,7 +28,7 @@ conservation constraints.
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Final, Literal, cast
@@ -349,6 +349,47 @@ class Panel:
             past_covariate_ids=list(self.past_covariate_ids),
             future_covariates=future,
             future_covariate_ids=list(self.future_covariate_ids),
+            interval_seconds=self.interval_seconds,
+            site_id=self.site_id,
+        )
+
+    def select_covariates(
+        self,
+        *,
+        keep: Callable[[str], bool] | None = None,
+    ) -> Panel:
+        """Return a panel carrying only the covariates ``keep`` accepts.
+
+        The covariate ablation works by removing channels before the panel reaches the
+        forecaster, rather than by asking each wrapper to ignore some of them. A wrapper
+        that was told to ignore a channel could still normalise against it; a channel
+        that is not in the panel cannot be used at all.
+
+        Args:
+            keep: predicate on the ``<scope>|<variable>`` identifier. ``None`` keeps
+                everything, which makes the no-ablation case go down the same code path
+                as every other one.
+        """
+        if keep is None:
+            return self
+        past_rows = [i for i, cid in enumerate(self.past_covariate_ids) if keep(cid)]
+        future_rows = [i for i, cid in enumerate(self.future_covariate_ids) if keep(cid)]
+        return Panel(
+            series=self.series,
+            series_ids=list(self.series_ids),
+            timestamps=self.timestamps,
+            past_covariates=(
+                self.past_covariates[past_rows, :]
+                if self.past_covariates is not None and past_rows
+                else None
+            ),
+            past_covariate_ids=[self.past_covariate_ids[i] for i in past_rows],
+            future_covariates=(
+                self.future_covariates[future_rows, :]
+                if self.future_covariates is not None and future_rows
+                else None
+            ),
+            future_covariate_ids=[self.future_covariate_ids[i] for i in future_rows],
             interval_seconds=self.interval_seconds,
             site_id=self.site_id,
         )
@@ -982,7 +1023,18 @@ def _validate_conservation(data: SiteData, root: Path, tolerance: float) -> None
     residual = conservation_residual(data)
     if residual.size == 0:
         return
-    worst = float(np.nanmax(np.abs(residual.to_numpy())))
+    magnitude = np.abs(residual.to_numpy())
+    if not np.isfinite(magnitude).any():
+        # Every cell is missing, so the identity is not satisfied or violated -- it is
+        # simply unverifiable. Saying so beats numpy's "All-NaN slice encountered", which
+        # tells a reader nothing about which of their files is wrong.
+        _fail(
+            root,
+            "the conservation residual is missing at every node and step, so the identity "
+            "cannot be checked at all. Occupancy or flow is entirely absent; a site with "
+            "no observations is not a site.",
+        )
+    worst = float(np.nanmax(magnitude))
     if worst > tolerance:
         stacked = residual.stack()
         worst_time, worst_node = cast("tuple[Any, Any]", stacked.abs().idxmax())

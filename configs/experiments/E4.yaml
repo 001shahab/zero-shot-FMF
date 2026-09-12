@@ -1,0 +1,72 @@
+# E4 -- How much local history does a trained model need to overtake a zero-shot one?
+#
+# This is the practical question a museum actually asks: we are installing sensors on
+# Monday, when is it worth training a model? The answer is a crossover point, and the
+# crossover is only meaningful with a confidence interval on it, so the reporting side
+# bootstraps the paired difference at each budget and marks whether the crossing is
+# significant.
+#
+# The budget is imposed by blanking the training window before the cutoff rather than by
+# shortening the panel. Every budget therefore shares the same origins, the same contexts
+# and the same test window; only the amount of history that carries a value changes. A
+# shorter panel would also shorten every zero-shot context and change the protocol out
+# from under the comparison.
+#
+# REQUIREMENT: the 30 and 90 day budgets need a training window at least that long. With
+# the default 0.6/0.2/0.2 split that means a record of at least 150 and 450 days
+# respectively. Simulate the sites accordingly:
+#
+#     mflow simulate configs/sites/house_museum.yaml --days 480 --seed 0
+#
+# The runner refuses a budget the record cannot meet rather than quietly truncating it,
+# so a short site fails at the first run instead of producing a curve that appears to
+# flatten for reasons that are an artefact of the data.
+
+id: E4
+question: >-
+  At what quantity of local training history does a site-trained model overtake a
+  zero-shot foundation model, and is the crossover statistically distinguishable?
+
+sites:
+  - sim_house_museum
+
+seeds: [0, 1, 2]
+
+protocol:
+  context_length: 1440
+  horizons: [5, 15, 30, 60]
+  stride: 60
+  quantiles: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+
+sensor_profile: clean
+covariates: all
+reconcilers: [none]
+
+methods:
+  # The zero-shot side, whose accuracy must not move with the budget. If it does, the
+  # budget is leaking into a method that was never supposed to be trained.
+  - name: timesfm3_multivariate
+  # The trained side.
+  - name: global_lightgbm
+  - name: dcrnn
+
+variants:
+  - label: d001
+    train_days: 1
+  - label: d003
+    train_days: 3
+  - label: d007
+    train_days: 7
+  - label: d014
+    train_days: 14
+  - label: d030
+    train_days: 30
+  - label: d090
+    train_days: 90
+
+notes:
+  zero_shot_method: timesfm3_multivariate+none
+  trained_method: global_lightgbm+none
+  invariant: >-
+    timesfm3_multivariate must score identically across all six budgets. A difference
+    means the training budget reached a method that does not train.
