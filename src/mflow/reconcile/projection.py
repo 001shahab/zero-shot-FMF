@@ -74,6 +74,10 @@ class ReconciliationResult:
         adjustment_norm: Euclidean norm of the correction applied.
         solver_status: status string reported by the solver.
         solve_time_ms: time spent inside the solver.
+        solver_restarts: how many times the solve was retried with a larger iteration
+            budget before it converged. Zero for almost every origin. It is recorded
+            rather than swallowed so that a reader can see whether a reconciliation
+            table rests on a handful of solves that needed coaxing.
     """
 
     reconciled: np.ndarray
@@ -84,6 +88,7 @@ class ReconciliationResult:
     adjustment_norm: float
     solver_status: str
     solve_time_ms: float
+    solver_restarts: int = 0
 
     def as_dict(self) -> dict[str, float | str]:
         """Diagnostics for the metrics table (everything except the array itself)."""
@@ -95,6 +100,7 @@ class ReconciliationResult:
             "adjustment_norm": self.adjustment_norm,
             "solver_status": self.solver_status,
             "solve_time_ms": self.solve_time_ms,
+            "solver_restarts": self.solver_restarts,
         }
 
 
@@ -211,6 +217,12 @@ class ProjectionReconciler(Reconciler):
             claim the reconciliation table makes.
         solver: CVXPY solver name; OSQP is the intended one.
         solver_options: forwarded to the solver.
+        max_restarts: how many times to retry a solve that exhausted its iteration
+            budget, each time multiplying the budget by ``restart_factor``. This is not
+            a tolerance relaxation: eps_abs and eps_rel are untouched and the post-solve
+            residual check is unchanged. It exists because ADMM converges linearly and a
+            badly scaled origin occasionally wants more iterations than the default.
+        restart_factor: the multiplier applied to ``max_iter`` on each restart.
     """
 
     name = "proposed"
@@ -225,6 +237,8 @@ class ProjectionReconciler(Reconciler):
         residual_tolerance: float = 1e-4,
         solver: str = "OSQP",
         solver_options: dict[str, Any] | None = None,
+        max_restarts: int = 2,
+        restart_factor: int = 10,
     ) -> None:
         if weighting not in ("uncertainty", "uniform"):
             raise ValueError(f"unknown weighting {weighting!r}")
@@ -234,6 +248,8 @@ class ProjectionReconciler(Reconciler):
         self.sigma_floor = sigma_floor
         self.residual_tolerance = residual_tolerance
         self.solver = solver
+        self.max_restarts = max_restarts
+        self.restart_factor = restart_factor
         self.solver_options = {
             "eps_abs": 1e-7,
             "eps_rel": 1e-7,
@@ -320,14 +336,31 @@ class ProjectionReconciler(Reconciler):
         compiled.z.value = w_sqrt * yhat
         compiled.b.value = np.asarray(rhs, dtype=np.float64)
 
-        compiled.problem.solve(solver=self.solver, warm_start=True, **self.solver_options)
-        status = str(compiled.problem.status)
-        if status not in ("optimal", "optimal_inaccurate"):
-            raise ReconciliationError(
-                f"the projection did not solve: status {status!r}. The constraint set is "
-                "infeasible or the solver tolerance is too tight; do not fall back to the "
-                "raw forecast silently."
-            )
+        # ADMM converges linearly, so a badly scaled origin occasionally wants more
+        # iterations than the budget rather than a looser tolerance. `user_limit` says
+        # exactly that: the budget ran out, not that the problem is infeasible. Retrying
+        # with a larger budget is therefore a continuation of the same solve and not a
+        # weakening of the guarantee -- eps_abs and eps_rel are untouched, and the
+        # post-solve residual check below still has to pass. Every restart is counted
+        # into the diagnostics. An infeasible status is not retried, because more
+        # iterations cannot fix it.
+        status = ""
+        restarts = 0
+        options = dict(self.solver_options)
+        while True:
+            compiled.problem.solve(solver=self.solver, warm_start=True, **options)
+            status = str(compiled.problem.status)
+            if status in ("optimal", "optimal_inaccurate"):
+                break
+            if status != "user_limit" or restarts >= self.max_restarts:
+                raise ReconciliationError(
+                    f"the projection did not solve: status {status!r} after {restarts} "
+                    f"restart(s) at up to {options['max_iter']} iterations. The constraint "
+                    "set is infeasible or the solver tolerance is too tight; do not fall "
+                    "back to the raw forecast silently."
+                )
+            restarts += 1
+            options["max_iter"] = int(options["max_iter"]) * self.restart_factor
         solution = compiled.y.value
         if solution is None:  # pragma: no cover - defensive, cvxpy sets it on success
             raise ReconciliationError(f"solver reported {status!r} but returned no solution")
@@ -356,6 +389,7 @@ class ProjectionReconciler(Reconciler):
             adjustment_norm=float(np.linalg.norm(y - yhat)),
             solver_status=status,
             solve_time_ms=float(solve_time or 0.0) * 1000.0,
+            solver_restarts=restarts,
         )
 
 

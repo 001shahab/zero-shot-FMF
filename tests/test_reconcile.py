@@ -340,3 +340,37 @@ def test_enforce_monotone_and_crossing_rate() -> None:
     repaired = enforce_monotone(crossed)
     np.testing.assert_array_equal(repaired, np.array([[[1.0, 2.0, 3.0]]]))
     assert crossing_rate(repaired) == 0.0
+
+
+# --------------------------------------------------------------------------- #
+# Solves that run out of iterations
+# --------------------------------------------------------------------------- #
+
+
+def test_a_solve_that_exhausts_its_budget_is_retried_not_abandoned(system, origin) -> None:
+    # OSQP reports `user_limit` when the iteration budget runs out, which says nothing
+    # about feasibility. A budget of one iteration forces that path deterministically.
+    rhs = system.rhs(origin)
+    forecast, sigma = _incoherent_forecast(system, rhs)
+    reconciler = ProjectionReconciler(solver_options={"max_iter": 1})
+
+    result = reconciler.reconcile(forecast, system, rhs, sigma=sigma)
+
+    assert result.solver_restarts >= 1, "the solve should have been retried, not abandoned"
+    assert result.residual_after <= reconciler.residual_tolerance
+
+
+def test_the_restart_budget_is_finite(system, origin) -> None:
+    rhs = system.rhs(origin)
+    forecast, sigma = _incoherent_forecast(system, rhs)
+    reconciler = ProjectionReconciler(solver_options={"max_iter": 1}, max_restarts=0)
+    with pytest.raises(ReconciliationError, match="after 0 restart"):
+        reconciler.reconcile(forecast, system, rhs, sigma=sigma)
+
+
+def test_a_clean_solve_records_no_restarts(system, origin) -> None:
+    rhs = system.rhs(origin)
+    forecast, sigma = _incoherent_forecast(system, rhs)
+    result = ProjectionReconciler().reconcile(forecast, system, rhs, sigma=sigma)
+    assert result.solver_restarts == 0
+    assert result.as_dict()["solver_restarts"] == 0
