@@ -695,6 +695,7 @@ def build_report(
     *,
     root: Path | None = None,
     reference: str | None = None,
+    experiment: str | None = None,
 ) -> dict[str, list[Path]]:
     """Build every artefact the logged runs can support, and no others.
 
@@ -708,11 +709,22 @@ def build_report(
         root: the results directory. Defaults to ``results/``.
         reference: the baseline method for the significance markers. Defaults to the
             method with the highest mean MAE, i.e. the weakest baseline present.
+        experiment: report only this experiment. Required once ``results/`` holds runs
+            from more than one, because a horizon is measured in steps and a step is not
+            the same duration everywhere: horizon 1 is five minutes on ROBOD and fifteen
+            on HZMetro, so a pooled table would average two different questions.
 
     Returns:
         A mapping from artefact name to the files written for it.
     """
-    runs = load_runs(root)
+    runs = load_runs(root, experiment=experiment)
+    experiments = sorted({run.manifest.experiment for run in runs})
+    if experiment is None and len(experiments) > 1:
+        raise ReportError(
+            f"results/ holds runs from {len(experiments)} experiments ({', '.join(experiments)}) "
+            "and a horizon means a different number of minutes in each, so they cannot "
+            "share a table. Pass --experiment to report one of them."
+        )
     target = ensure_dir(Path(output))
     metrics = combine(runs)
     written: dict[str, list[Path]] = {}

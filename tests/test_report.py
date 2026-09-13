@@ -554,3 +554,32 @@ def test_build_report_writes_the_main_table_for_a_half_panel_site(tmp_path) -> N
     assert "main" in written
     report = json.loads((tmp_path / "paper" / "report.json").read_text())
     assert "no run applied a reconciler" in report["skipped"]["reconciliation"]
+
+
+def test_runs_from_two_experiments_cannot_share_a_table(tmp_path) -> None:
+    # A horizon is a number of steps, and a step is five minutes on ROBOD and fifteen on
+    # HZMetro. Pooling them would average two different questions under one row label.
+    results = tmp_path / "results"
+    for experiment in ("E7_robod", "E7_hzmetro"):
+        write_run(
+            results,
+            f"{experiment}_s0",
+            experiment,
+            half_panel_metrics({"good": 0.5, "weak": 1.0}, "occupancy"),
+        )
+    with pytest.raises(ReportError, match="cannot share a table"):
+        build_report(tmp_path / "paper", root=results, reference="weak")
+
+
+def test_naming_the_experiment_reports_just_that_one(tmp_path) -> None:
+    results = tmp_path / "results"
+    for experiment in ("E7_robod", "E7_hzmetro"):
+        write_run(
+            results,
+            f"{experiment}_s0",
+            experiment,
+            half_panel_metrics({"good": 0.5, "weak": 1.0}, "occupancy"),
+        )
+    build_report(tmp_path / "paper", root=results, reference="weak", experiment="E7_robod")
+    report = json.loads((tmp_path / "paper" / "report.json").read_text())
+    assert report["runs"] == ["E7_robod_s0"]

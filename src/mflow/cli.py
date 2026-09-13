@@ -148,6 +148,7 @@ def cmd_report(args: argparse.Namespace) -> int:
             Path(args.output),
             root=Path(args.results) if args.results else None,
             reference=args.reference,
+            experiment=args.experiment,
         )
     except ReportError as error:
         print(f"error: {error}", file=sys.stderr)
@@ -269,6 +270,11 @@ def build_parser() -> argparse.ArgumentParser:
     report.add_argument("--results", default=None, help="override results/")
     report.add_argument(
         "--reference", default=None, help="baseline for the significance markers"
+    )
+    report.add_argument(
+        "--experiment",
+        default=None,
+        help="report one experiment; required when results/ holds more than one",
     )
     report.set_defaults(func=cmd_report)
 

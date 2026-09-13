@@ -29,7 +29,7 @@ refuses to emit a number no run produced.
 ## Table of contents
 
 - [What is being claimed](#what-is-being-claimed)
-  - [The one result there is so far](#the-one-result-there-is-so-far)
+  - [The results there are so far](#the-results-there-are-so-far)
 - [Ground rules](#ground-rules)
 - [Installation](#installation)
 - [Quick start](#quick-start)
@@ -72,11 +72,16 @@ violate the project's second ground rule. Run the rest and read `paper/tables/`,
 | **E7a** | Does zero-shot forecasting transfer to a real building? | `configs/experiments/E7_robod.yaml` |
 | **E7b** | Does it transfer to real network flow at scale? | `configs/experiments/E7_hzmetro.yaml` |
 
-### The one result there is so far
+### The results there are so far
 
-E7a, on ROBOD: three seeds, 783 scored origins, five rooms at five-minute resolution,
-tested against `last_value` with Diebold–Mariano and Holm–Bonferroni correction within
-each horizon. MASE, lower is better; a star is significantly better than `last_value`.
+Both halves of E7 have been run; E1–E6 have not. Three seeds each, tested against
+`last_value` with Diebold–Mariano and Holm–Bonferroni correction within each horizon. A
+star marks a method significantly better than `last_value`. MASE, lower is better.
+
+**E7a — ROBOD, five rooms of real occupancy at five minutes.** 261 origins per seed of
+518 enumerated; the other 257 were dropped for having no observation anywhere in their
+context or no truth in their target window, and each manifest records the count and the
+reason. 783 scored origins over three seeds.
 
 | Method | 5 min | 15 min | 30 min | 60 min |
 |---|---|---|---|---|
@@ -89,18 +94,48 @@ each horizon. MASE, lower is better; a star is significantly better than `last_v
 | `historical_average` | 0.773 | 0.832 | 0.827 | 0.815 |
 
 There is a crossover, and it is the point. At five minutes nothing beats persistence and
-no foundation model is significantly better than it; room occupancy simply does not move
-much in five minutes. By thirty minutes Toto is significantly ahead, and by an hour all
-four foundation models are, with Toto cutting CRPS from 0.508 to 0.373 — a 27% reduction
-in probabilistic error over the baseline a building already has. Interval coverage sits at
-0.88–0.91 against a nominal 0.80, so the fans are somewhat wide rather than overconfident.
+no foundation model is significantly better than it; room occupancy does not move much in
+five minutes. By thirty minutes Toto is significantly ahead, and by an hour all four are,
+with Toto cutting CRPS from 0.508 to 0.373 — a 27% reduction in probabilistic error over
+the baseline a building already has. Coverage sits at 0.88–0.91 against a nominal 0.80, so
+the intervals are wide rather than overconfident.
 
-The two seasonal baselines are far behind everything, which is a fact about ROBOD rather
-than about them: the record was collected in weekday blocks around a two-month vacation
-hole, so "the same time yesterday" is often not a comparable day, or not a recorded one.
+The seasonal baselines are far behind everything, which is a fact about ROBOD rather than
+about them: it was collected in weekday blocks around a two-month vacation hole, so "the
+same time yesterday" is often not a comparable day, or not a recorded one.
 
-E7 is the one that makes the work publishable. Everything before it is measured on a
-simulator whose parameters were chosen by the same person making the claim.
+**E7b — HZMetro, 160 real fare-gate flow series across 80 stations at fifteen minutes.**
+196 origins per seed of 233 enumerated. Of those, 181 score at fifteen minutes and all 196
+at two hours: a target window that lies entirely inside the overnight service gap has
+nothing to score against, and a longer window from the same origin reaches past it.
+
+| Method | 15 min | 30 min | 60 min | 120 min |
+|---|---|---|---|---|
+| `seasonal_naive` | 0.759 \* | **0.766** \* | **0.750** \* | **0.722** \* |
+| `timesfm3_multivariate` | **0.690** \* | 0.785 \* | 0.903 \* | 0.972 \* |
+| `timesfm3_univariate` | 0.720 \* | 0.793 \* | 0.898 \* | 0.963 \* |
+| `toto2` | 0.758 \* | 0.902 \* | 1.211 \* | 1.719 \* |
+| `historical_average` | 0.909 | 0.925 \* | 0.922 \* | 0.914 \* |
+| `last_value` | 0.901 | 1.098 | 1.484 | 2.015 |
+| `chronos2_multivariate` | 0.943 | 1.110 | 1.486 | 2.064 |
+
+The conclusion is the opposite one, and it is worth stating plainly: **on a strongly
+periodic signal, a seasonal baseline beats every zero-shot foundation model on point
+accuracy beyond fifteen minutes.** Metro ridership is driven by a timetable and a working
+week, so "the same time yesterday" is an excellent forecast and stays excellent as the
+horizon grows, while every foundation model degrades with it.
+
+Two things qualify that. First, `seasonal_naive` emits intervals of almost zero width —
+its 80% coverage is 0.04 against a nominal 0.80 — so it supplies no usable uncertainty at
+all, and on CRPS TimesFM 3 beats it at 15, 30 and 60 minutes (24.8 against 29.1 at 30
+minutes). A method that is right on average and silent about its own error is not
+interchangeable with one that is calibrated. Second, TimesFM 3 stays within 30% of it on
+MASE at every horizon while also being calibrated, whereas Toto and Chronos-2 degrade
+sharply and end up at or below persistence at two hours.
+
+So the honest summary of E7 is conditional rather than triumphal: zero-shot forecasting
+earns its place where the signal is smooth and aperiodic and a building has no usable
+seasonal baseline, and it does not displace a seasonal baseline where one exists.
 
 ---
 
@@ -138,7 +173,7 @@ sensor dropout forces the conservation anchor to be carried forward, the number 
 it was carried appears in `reconciliation.parquet` as `anchor_staleness_steps`.
 
 **6. Typed, linted, tested.** Python 3.11+, type hints on every public function, `ruff`
-and `mypy --strict`-adjacent clean, 378 tests.
+and `mypy --strict`-adjacent clean, 380 tests.
 
 ---
 
@@ -197,8 +232,10 @@ mflow list
 # 3. Check the pipeline end to end. Trivial forecasters only, no model weights, ~4s.
 mflow run configs/experiments/smoke.yaml --allow-dirty
 
-# 4. Build the tables from whatever has been run.
-mflow report --output paper/tables
+# 4. Build the tables from whatever has been run. Once results/ holds more than one
+#    experiment, name the one you want: a horizon is a number of steps, and a step is
+#    five minutes on ROBOD and fifteen on HZMetro.
+mflow report --experiment E7_robod --output paper/E7_robod
 ```
 
 Then plan a real experiment before paying for it:
@@ -495,6 +532,7 @@ mflow degrade   <site_id> [--profile NAME] [--seed N]
 mflow run       <experiment.yaml> [--dry-run] [--sites ...] [--seeds ...]
                 [--variants ...] [--overwrite] [--allow-dirty] [--results DIR]
 mflow report    [--output DIR] [--results DIR] [--reference METHOD]
+                [--experiment ID]
 mflow reproduce <results/run_id>
 mflow list
 ```
@@ -639,7 +677,7 @@ mypy src
 pytest
 ```
 
-The suite is 378 tests and runs in about twenty-five seconds. Tests needing downloaded
+The suite is 380 tests and runs in about twenty-five seconds. Tests needing downloaded
 weights or fetched datasets are opt-in:
 
 ```bash
@@ -672,8 +710,8 @@ only parses when told to target 3.12 or later.
 | Dataset acquisition framework (download, checksums, provenance, adapter base) | complete |
 | ROBOD adapter and `scripts/fetch_robod.py` | complete — `E7_robod` runs end to end |
 | PVCGN adapter and `scripts/fetch_pvcgn.py` | complete — `E7_hzmetro` runs end to end |
-| **E7a executed** | three seeds, 783 scored origins, logged under `results/` |
-| E1–E6, E7b executed | **not yet run** |
+| **E7 executed** | both halves, three seeds each, logged under `results/` |
+| E1–E6 executed | **not yet run** |
 | A real site measuring occupancy **and** flow | **not started** — the gap that leaves the reconciliation claim resting on simulation; ATC indoor tracking is the candidate |
 | Melbourne, UWB, DCRNN adapters | **not started** |
 
