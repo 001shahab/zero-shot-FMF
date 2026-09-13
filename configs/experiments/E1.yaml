@@ -7,8 +7,19 @@
 #
 # The stride is 60 steps (one hour). At the longest horizon the Diebold-Mariano test
 # needs roughly 2h+2 = 122 origins before the Harvey-Leybourne-Newbold correction is
-# defined; a 30-day record gives a test window of about 8600 steps, so 60 leaves ~143.
-# Coarsening the stride would silently cost the significance markers.
+# defined, so the stride must not be coarsened without also checking that the budget
+# still clears that bar.
+#
+# max_origins caps every run at 300, which is above the 122 the correction needs and in
+# the range E7 already produced clean significance from (196 and 261). Without the cap
+# the three sites enumerate 2298, 570 and 570, so sim_house_museum would carry four
+# times the origins of the other two for no extra power and four times the compute.
+#
+# SARIMA is not here. It is fitted per series per origin, which measures at 112 s per
+# origin on sim_house_museum's 24 series and extrapolates to about 23 minutes per origin
+# on sim_national's 296 -- 465 hours for this experiment against 13 for the whole rest of
+# the sweep. E1_classical runs it on the small site, where the comparison is affordable
+# and every method still shares the same origins.
 
 id: E1
 question: >-
@@ -28,6 +39,7 @@ protocol:
   stride: 60
   quantiles: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
   split: [0.6, 0.2, 0.2]
+  max_origins: 300
 
 sensor_profile: clean
 covariates: all
@@ -39,7 +51,6 @@ methods:
   - name: last_value
   - name: seasonal_naive
   - name: historical_average
-  - name: sarima
   - name: ets
   # Foundation models, univariate, so that E1 isolates the zero-shot claim from the
   # multivariate and covariate claims that E2 tests separately.

@@ -37,6 +37,11 @@ protocol:
   horizons: [5, 15, 30, 60]
   stride: 60
   quantiles: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+  # Capped at 300 origins per run, matching E1. That is above the 122 the
+  # Harvey-Leybourne-Newbold correction needs at the longest horizon, and in the range
+  # E7 already produced clean significance from. Uncapped, sim_house_museum would carry
+  # 2298 origins against 570 for the other two sites, for no extra power.
+  max_origins: 300
 
 sensor_profile: realistic
 covariates: all

@@ -1,0 +1,58 @@
+# E1_classical -- the same question as E1, with SARIMA, on the one site where it fits.
+#
+# SARIMA belongs in E1: "does zero-shot beat what a building already has" is a weaker
+# claim if the classical baseline is missing. It is split out rather than dropped because
+# of a measured cost, not a preference.
+#
+# SARIMA is fitted per series per origin, with a seasonal period of 96 over a 1440-step
+# context. Measured on this machine: 112 s per origin for sim_house_museum's 24 series,
+# which is 4.7 s per series. sim_palazzo has 84 series and sim_national 296, so the same
+# protocol costs roughly 6 and 23 minutes per origin there. Over 300 origins and three
+# seeds that is 465 hours for E1, against 13 hours for the whole of E1-E6 without it.
+# statsmodels also reports a convergence failure on some series at this context length.
+#
+# So SARIMA runs here, on the 24-series site, at the same 300 origins as everything else.
+# The method list is E1's plus SARIMA, deliberately: the Diebold-Mariano test pairs on
+# shared origins within a run, so SARIMA can only be compared against the foundation
+# models if they are evaluated at the same origins in the same run. That re-runs the
+# sim_house_museum foundation models that E1 also covers, which costs about half an hour
+# and is the price of a valid pairing.
+#
+# What may not be concluded from this: nothing here says how SARIMA would have scored on
+# sim_palazzo or sim_national. It says only that fitting it there was not affordable.
+
+id: E1_classical
+question: >-
+  On the site where fitting a classical model per series is affordable, does a zero-shot
+  foundation model beat SARIMA and the other baselines a building already has?
+
+sites:
+  - sim_house_museum
+
+seeds: [0, 1, 2]
+
+protocol:
+  context_length: 1440      # 24 hours at one-minute sampling
+  horizons: [5, 15, 30, 60]
+  stride: 60
+  quantiles: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+  split: [0.6, 0.2, 0.2]
+  max_origins: 300
+
+sensor_profile: clean
+covariates: all
+reconcilers: [none]
+
+methods:
+  - name: last_value
+  - name: seasonal_naive
+  - name: historical_average
+  - name: sarima
+  - name: ets
+  - name: timesfm3_univariate
+  - name: timesfm25_univariate
+  - name: chronos2_univariate
+  - name: toto2
+
+notes:
+  reference_method: seasonal_naive+none
