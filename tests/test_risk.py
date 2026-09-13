@@ -338,6 +338,26 @@ def test_a_site_that_never_closes_cannot_host_the_anomaly(stream) -> None:
         )
 
 
+def test_closures_too_short_for_the_anomaly_report_the_longest_run(stream) -> None:
+    # The way this happens in practice is a capped plan. max_origins keeps its origins
+    # evenly spaced, so capping widens the effective stride until no run of consecutive
+    # origins fits inside one night, and the error has to point at that rather than
+    # imply the site never closes.
+    series, _ = stream
+    closed = np.zeros(series.shape, dtype=bool)
+    closed[:, 300:303] = True
+    with pytest.raises(AnomalyError, match="longest run of consecutive shut origins is 3"):
+        inject_anomalies(
+            series,
+            ["closed_gallery_flow"],
+            seed=6,
+            n_per_kind=1,
+            duration=10,
+            closed_mask=closed,
+            flow_rows=np.array([2, 3]),
+        )
+
+
 def test_a_duration_longer_than_the_window_is_refused(stream) -> None:
     series, _ = stream
     with pytest.raises(AnomalyError, match="does not fit"):

@@ -188,6 +188,15 @@ def inject_anomalies(
     return altered, injected
 
 
+def _longest_run(flags: np.ndarray) -> int:
+    """The longest run of consecutive True values, for diagnosing a failed placement."""
+    best = current = 0
+    for flag in flags:
+        current = current + 1 if flag else 0
+        best = max(best, current)
+    return best
+
+
 def _pick_closed_window(
     closed_mask: np.ndarray,
     flow_rows: np.ndarray,
@@ -205,9 +214,22 @@ def _pick_closed_window(
             if shut[start : start + duration].all():
                 candidates.append((int(row), start))
     if not candidates:
+        # Almost always the origins are spaced further apart than the site is ever shut
+        # for. `max_origins` keeps its origins evenly spaced across the test window, so
+        # capping a plan widens the effective stride well past the nominal one: cap a
+        # year of hourly origins at 300 and consecutive origins land eight hours apart,
+        # at which point no run of five of them falls inside one night. Say so, rather
+        # than leaving the caller to rediscover it.
+        longest = max(
+            (_longest_run(closed_mask[row]) for row in flow_rows),
+            default=0,
+        )
         raise AnomalyError(
             f"no {duration}-step window in which the site is shut; a closed-gallery "
-            "anomaly cannot be placed"
+            f"anomaly cannot be placed. The longest run of consecutive shut origins is "
+            f"{longest}. If the site does close, the origins are probably spaced further "
+            "apart than it stays shut: shorten anomaly_duration, or drop max_origins so "
+            "that consecutive origins really are one stride apart."
         )
     choice = int(generator.integers(len(candidates)))
     return candidates[choice]

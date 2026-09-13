@@ -37,11 +37,13 @@ protocol:
   horizons: [5, 15, 30, 60]
   stride: 60
   quantiles: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
-  # Capped at 300 origins per run, matching E1. That is above the 122 the
-  # Harvey-Leybourne-Newbold correction needs at the longest horizon, and in the range
-  # E7 already produced clean significance from. Uncapped, sim_house_museum would carry
-  # 2298 origins against 570 for the other two sites, for no extra power.
-  max_origins: 300
+  # Deliberately uncapped, unlike E1-E5. max_origins keeps its origins evenly spaced
+  # across the test window, so a cap widens the effective stride: capping this site's
+  # 2298 hourly origins at 300 puts consecutive origins about eight hours apart. The
+  # risk heads below are the one place that depends on origins really being one stride
+  # apart -- a closed-gallery anomaly has to occupy consecutive origins that are all
+  # inside the same night, and at eight-hour spacing no such run exists. E6 is about an
+  # hour of compute uncapped, so the cap bought nothing here anyway.
 
 sensor_profile: realistic
 covariates: all
