@@ -662,18 +662,27 @@ appears to flatten for reasons that are an artefact of the data.
 
 ### Cost of a full run
 
-Measured on this machine (Apple silicon, MPS), per forecast origin over 24 series with a
-1440-step context: Chronos-2 multivariate 0.8 s, TimesFM 3 multivariate 1.1 s, TimesFM 3
-univariate 2.5 s, Chronos-2 univariate 3.3 s, **Toto 2.0 25.5 s**.
+Measured on this machine (Apple silicon, MPS), seconds per forecast origin over 24 series
+with a 1440-step context, after the first call:
 
-Toto at 313m parameters dominates everything else by more than an order of magnitude, and
-E1's test window at `stride: 60` holds a few thousand origins. A full sweep is therefore
-not an overnight job at that stride, and the honest options are to cap origins with
-`max_origins` — the protocol thins evenly, so a capped run is a uniform subsample of the
-same window rather than a different one — or to drop to a smaller Toto checkpoint.
-Whichever is chosen has to be recorded in the config before the runs start, not discovered
-afterwards; `ProtocolConfig.check_origin_budget` warns when a cap leaves too few origins
-for a Diebold-Mariano test at the longest horizon.
+| Method | Warm-up | Steady state |
+|---|---|---|
+| `chronos2_multivariate` | 0.8 s | 0.08 s |
+| `chronos2_univariate` | 3.3 s | 0.09 s |
+| `toto2` | 4.3 s | 0.13 s |
+| `timesfm3_multivariate` | 1.2 s | 0.14 s |
+| `timesfm3_univariate` | 3.0 s | 0.18 s |
+
+Warm-up and steady state differ by one to two orders of magnitude, which is worth stating
+because timing a single origin gives an answer that is wrong by that much: Toto's first
+call takes 4.3 s and its second takes 0.13 s. A sweep amortises the warm-up over thousands
+of origins, so only the right-hand column matters for planning.
+
+On those numbers the whole of E1–E7 is roughly 78 hours uncapped, or 48 hours with
+`max_origins: 480`. The protocol thins evenly, so a capped run is a uniform subsample of
+the same window rather than a different one. `ProtocolConfig.check_origin_budget` warns
+when a cap leaves too few origins for a Diebold–Mariano test at the longest horizon,
+which at `horizon: 60` needs about 122.
 
 ---
 
