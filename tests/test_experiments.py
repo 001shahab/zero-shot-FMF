@@ -560,3 +560,29 @@ def test_dropped_origins_reach_the_manifest(tmp_path, toy_data) -> None:
     # the reader of the results has to be able to see that from the manifest alone.
     assert manifest["config"]["n_origins_dropped"] > 0
     assert manifest["config"]["n_origins"] < manifest["config"]["n_origins_enumerated"]
+
+
+def test_a_site_without_measured_occupancy_cannot_be_reconciled(tmp_path, toy_data) -> None:
+    # PVCGN counts fare-gate crossings and nothing standing in a station. That is the
+    # mirror image of ROBOD, and it fails for the same reason: only one side of the
+    # conservation identity is observed.
+    site = load_site(toy_data / "toy")
+    write_site(
+        SiteData(
+            meta=site.meta.model_copy(update={"has_ground_truth_flow": False}),
+            nodes=site.nodes,
+            edges=site.edges,
+            occupancy=site.occupancy.assign(count=np.nan),
+            flow=site.flow,
+            covariates_past=site.covariates_past,
+            covariates_future=site.covariates_future,
+        ),
+        toy_data / "toy",
+    )
+    with pytest.raises(RunnerError, match="records no occupancy at all"):
+        run_experiment(
+            write_config(tmp_path, reconcilers=["proposed"]),
+            data_root=toy_data,
+            results_root=tmp_path / "results",
+            allow_dirty=True,
+        )

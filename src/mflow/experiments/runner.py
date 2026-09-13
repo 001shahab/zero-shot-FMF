@@ -155,27 +155,36 @@ def prepare_site(
 
 
 def _check_reconcilable(site: SiteData, variant: ResolvedVariant) -> None:
-    """Refuse to reconcile a site whose flows were never measured.
+    """Refuse to reconcile a site that measures only one side of the identity.
 
     Every reconciler works from the conservation identity, which relates a node's change
-    in occupancy to the flows across its doors. ROBOD counts people in rooms and nothing
-    at the doorways, so on that site the identity has no observed terms: a reconciler
-    would project onto a constraint built entirely from the forecaster's own guesses, and
-    the resulting coherence residual would measure the forecaster's self-consistency
-    rather than its agreement with the building. Running it and reporting the number
-    would be worse than not running it, so the run stops here and says why.
+    in occupancy to the flows across its doors. Both halves of that have to be observed
+    for the projection to mean anything, and the two real datasets in this project each
+    supply exactly one of them:
+
+    * ROBOD counts people in rooms and nothing at the doorways.
+    * PVCGN counts fare-gate crossings and nothing standing in the station.
+
+    On either, a reconciler would project onto a constraint assembled partly from the
+    forecaster's own predictions, and the coherence residual it reported would measure
+    the forecaster's self-consistency rather than its agreement with the building.
+    Running it and reporting the number would be worse than not running it.
     """
     reconcilers = {name for _method, name in variant.cells()} - {"none"}
     if not reconcilers:
         return
-    measured = site.flow["count"].notna().any()
-    if not measured:
+    missing = [
+        name
+        for name, frame in (("occupancy", site.occupancy), ("doorway flow", site.flow))
+        if not frame["count"].notna().any()
+    ]
+    if missing:
         raise RunnerError(
-            f"site {site.meta.site_id!r} records no doorway flow at all, so the "
-            f"conservation identity has no observed terms and reconciler(s) "
-            f"{sorted(reconcilers)} have nothing to reconcile against. Use "
-            "`reconcilers: [none]` for this site, or evaluate the constraint machinery "
-            "on a site that measures flow."
+            f"site {site.meta.site_id!r} records no {' and no '.join(missing)} at all, so "
+            f"the conservation identity has unobserved terms and reconciler(s) "
+            f"{sorted(reconcilers)} would be projecting onto the forecaster's own "
+            "predictions. Use `reconcilers: [none]` for this site, or evaluate the "
+            "constraint machinery on a site that measures both occupancy and flow."
         )
 
 

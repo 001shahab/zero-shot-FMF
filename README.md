@@ -43,6 +43,9 @@ refuses to emit a number no run produced.
   - [M7 — experiments](#m7--experiments)
 - [Command line reference](#command-line-reference)
 - [Datasets](#datasets)
+  - [A limitation worth stating before the results](#a-limitation-worth-stating-before-the-results)
+  - [ROBOD](#robod)
+  - [HZMetro](#hzmetro)
 - [Reproducibility](#reproducibility)
 - [Development](#development)
 - [Current status](#current-status)
@@ -52,7 +55,7 @@ refuses to emit a number no run produced.
 
 ## What is being claimed
 
-Seven experiments, each answering one question. None of their results are in this README,
+Eight experiments, each answering one question. None of their results are in this README,
 because writing a number here that no logged run produced would violate the project's
 second ground rule. Run them and read `paper/tables/`.
 
@@ -64,7 +67,8 @@ second ground rule. Run them and read `paper/tables/`.
 | **E4** | How much local history before a trained model overtakes zero-shot? | `configs/experiments/E4.yaml` |
 | **E5** | How fast does each method degrade as the sensors get worse? | `configs/experiments/E5.yaml` |
 | **E6** | Does the forecast change a decision an operator would make? | `configs/experiments/E6.yaml` |
-| **E7** | Does any of it transfer to real buildings? | `configs/experiments/E7_robod.yaml` |
+| **E7a** | Does zero-shot forecasting transfer to a real building? | `configs/experiments/E7_robod.yaml` |
+| **E7b** | Does it transfer to real network flow at scale? | `configs/experiments/E7_hzmetro.yaml` |
 
 E7 is the one that makes the work publishable. Everything before it is measured on a
 simulator whose parameters were chosen by the same person making the claim.
@@ -105,7 +109,7 @@ sensor dropout forces the conservation anchor to be carried forward, the number 
 it was carried appears in `reconciliation.parquet` as `anchor_staleness_steps`.
 
 **6. Typed, linted, tested.** Python 3.11+, type hints on every public function, `ruff`
-and `mypy --strict`-adjacent clean, 349 tests.
+and `mypy --strict`-adjacent clean, 367 tests.
 
 ---
 
@@ -471,9 +475,37 @@ date and a checksum, and then invokes its adapter to write `data/canonical/<site
 | ATC indoor tracking | Indoor pedestrian trajectories in a large public building | [dil.atr.jp](https://dil.atr.jp) |
 | Museum UWB | Indoor positioning in an actual museum | Zenodo 14918763 |
 
-HZMetro is a transport network, not a museum. It is included because it exercises the
-conservation constraint on a real closed graph; no claim about visitor behaviour in
-heritage settings rests on it, and E7's config says so.
+HZMetro is a transport network, not a museum. It is included for the scale of its real
+directional flow; no claim about visitor behaviour in heritage settings rests on it, and
+its config says so.
+
+### A limitation worth stating before the results
+
+**No public dataset in this project measures room occupancy and doorway flow at the same
+time.** ROBOD counts people in rooms and nothing at the doorways; PVCGN counts fare-gate
+crossings and nothing standing in a station. Each supplies exactly one side of the
+conservation identity, so on neither of them can a reconciler be evaluated: it would be
+projecting onto a constraint assembled partly from the forecaster's own predictions, and
+the coherence residual it reported would measure the forecaster's self-consistency rather
+than its agreement with the building.
+
+The runner enforces this rather than leaving it to a reader to notice — asking for any
+reconciler but `none` on such a site is an error. The consequence is that **the
+reconciliation claim rests on simulation (E3, E5) and is not corroborated on real data.**
+
+The specification assumed HZMetro would corroborate it, describing it as "a closed graph
+with a conservation identity of exactly the assumed form". Reading the release rather
+than assuming it, that is not the case: closing the identity at a station needs the flows
+*between* stations, which is the origin–destination matrix, and PVCGN does not publish
+one. The obvious workaround — occupancy as the running total of entries minus exits — was
+tried and rejected on the evidence: it goes negative at 76 of Hangzhou's 80 stations,
+reaching −26,068, because a commuter station discharges far more people in the morning
+than it takes in. A quantity that is routinely negative is not a count of people in a
+room.
+
+Closing this gap needs a source carrying trajectories, from which occupancy and crossings
+can be derived consistently from the same observations. The ATC indoor tracking release is
+the candidate, and it is the outstanding item in the status table below.
 
 ### ROBOD
 
@@ -491,9 +523,7 @@ number that comes out of it, and all three are recorded in the site's `meta.prov
   missing, and `has_ground_truth_flow` is false. Flow is *not* derived from successive
   occupancy differences: doing so would manufacture exactly the quantity reconciliation
   is meant to be evaluated on, and every coherence number computed over it would be
-  circular. The runner refuses a reconciler other than `none` on a site with no measured
-  flow, which is why E7 is split in two — `E7_robod` tests the forecasting claims and
-  `E7_hzmetro` will test the constraint machinery.
+  circular.
 - **ROBOD publishes no opening hours for SDE4**, so `opening_hours` is empty and no
   `is_open` covariate is emitted. An invented timetable would make the calendar arm of
   the covariate ablation measure a fiction.
@@ -504,6 +534,38 @@ number that comes out of it, and all three are recorded in the site's `meta.prov
   context or no truth to score against and records the count and the reason in the run
   manifest. A run over a gappy record therefore cannot silently evaluate on a fraction of
   the origins its stride implies.
+
+### HZMetro
+
+```bash
+python scripts/fetch_pvcgn.py    # ~32 MB, writes data/canonical/hzmetro/
+mflow run configs/experiments/E7_hzmetro.yaml
+```
+
+Eighty Hangzhou metro stations at fifteen minutes, giving 160 measured flow series and a
+real physical adjacency of 84 station pairs, which travels in `meta.provenance` for the
+graph baselines. Service runs 05:15–23:30 local, so 23% of the steps on the regular grid
+are overnight and unobserved; `require_observed` handles them as it does ROBOD's.
+
+One detail matters more than the rest. PVCGN ships ridership as `(T, 4, N, 2)` and its
+README describes the last axis as `(inflow/outflow)`, which reads as channel 0 being
+entries. **The data says the reverse**, and since the conservation constraint's sign
+depends on it, it was checked rather than assumed. Across the whole Hangzhou record:
+
+- in the first interval of the service day channel 0 sums to 29 and channel 1 to 240 —
+  nobody alights before anybody has boarded, so channel 1 is entries;
+- in the last interval channel 0 sums to 1,495 and channel 1 to 118 — the last trains
+  emptying out after entry has stopped;
+- within every service day the running total of channel 1 leads that of channel 0, and
+  the two converge to within 0.37% by close of service.
+
+So channel 0 is exits and channel 1 is entries. `mflow.data.pvcgn.EXIT_CHANNEL` and
+`ENTRY_CHANNEL` are the single place that mapping is applied, and the finding is repeated
+in the site's provenance so it travels with the data.
+
+Shanghai (288 stations, 576 series) converts from the same download with
+`python scripts/fetch_pvcgn.py --cities shanghai`. Nothing in the experiment plan needs it
+yet, so it is off by default.
 
 ---
 
@@ -533,7 +595,7 @@ mypy src
 pytest
 ```
 
-The suite is 349 tests and runs in about twenty-five seconds. Tests needing downloaded
+The suite is 367 tests and runs in about twenty-seven seconds. Tests needing downloaded
 weights or fetched datasets are opt-in:
 
 ```bash
@@ -565,8 +627,9 @@ only parses when told to target 3.12 or later.
 | M7 experiment configs E1–E7, runner, CLI | complete |
 | Dataset acquisition framework (download, checksums, provenance, adapter base) | complete |
 | ROBOD adapter and `scripts/fetch_robod.py` | complete — `E7_robod` runs end to end |
-| HZMetro/PVCGN adapter | **in progress** — `E7_hzmetro` cannot run until it lands |
-| Melbourne, ATC, UWB, DCRNN adapters | **not started** |
+| PVCGN adapter and `scripts/fetch_pvcgn.py` | complete — `E7_hzmetro` runs end to end |
+| A real site measuring occupancy **and** flow | **not started** — the gap that leaves the reconciliation claim resting on simulation; ATC indoor tracking is the candidate |
+| Melbourne, UWB, DCRNN adapters | **not started** |
 
 The simulated sites currently in `data/canonical/` are short. `sim_house_museum` has 30
 days; `sim_palazzo` and `sim_national` have 2. Regenerate them before running E1–E6:

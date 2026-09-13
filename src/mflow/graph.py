@@ -16,6 +16,7 @@ and edge ordering.
 
 from __future__ import annotations
 
+import math
 from collections.abc import Sequence
 from dataclasses import dataclass
 from functools import cached_property
@@ -85,12 +86,15 @@ class BuildingGraph:
             edge_ids=tuple(str(e) for e in edges["edge_id"]),
             src=tuple(str(s) for s in edges["src_node"]),
             dst=tuple(str(d) for d in edges["dst_node"]),
+            # A blank capacity means the source does not publish one, and the honest
+            # upper bound for an unknown capacity is infinity rather than a guess that
+            # would make the box constraint bind where the data never said it should.
             node_capacity={
-                str(n): float(c)
+                str(n): math.inf if pd.isna(c) else float(c)
                 for n, c in zip(nodes["node_id"], nodes["capacity_persons"], strict=True)
             },
             edge_capacity_per_min={
-                str(e): float(c)
+                str(e): math.inf if pd.isna(c) else float(c)
                 for e, c in zip(
                     edges["edge_id"], edges["capacity_persons_per_min"], strict=True
                 )

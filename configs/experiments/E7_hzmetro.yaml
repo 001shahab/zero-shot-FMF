@@ -1,0 +1,89 @@
+# E7b -- Does zero-shot forecasting transfer to real network flow at scale?
+#
+# The other half of E7. Where E7_robod tests real room occupancy in a building of five
+# rooms, this tests real directional flow across 160 series on a real physical graph of
+# 80 stations -- a scale no public museum dataset reaches.
+#
+# The site does not exist until its fetch script has been run:
+#
+#     python scripts/fetch_pvcgn.py
+#
+# What this experiment does NOT do, and why
+# -----------------------------------------
+# The specification listed HZMetro as "a closed graph with a conservation identity of
+# exactly the assumed form". Reading the published data rather than assuming it, that is
+# not true of this release. Fare gates count crossings; nothing counts the people standing
+# in a station, and closing the identity at a station needs the flows between stations,
+# which is the origin-destination matrix that PVCGN does not include.
+#
+# The obvious workaround -- occupancy as the running total of entries minus exits -- was
+# tried and rejected on the evidence: it goes negative at 76 of the 80 stations, reaching
+# -26068, because a commuter station discharges far more people in the morning than it
+# takes in. A quantity that is routinely negative is not a count of people in a room.
+#
+# So there is no reconciliation arm here either, and the runner enforces it: a site that
+# measures only one side of the conservation identity cannot be reconciled. Between this
+# and E7_robod, the honest position is that **no public dataset in this project measures
+# occupancy and doorway flow simultaneously**, so the reconciliation claim rests on
+# simulation (E3, E5) and is not corroborated on real data. The report says so, and a
+# dataset that would corroborate it -- one carrying trajectories from which both
+# quantities can be derived consistently, such as the ATC indoor tracking release -- is
+# named in the README as the outstanding gap.
+#
+# Hangzhou rather than Shanghai. Shanghai is 288 stations and 576 series over five
+# months; nothing here needs it, and `python scripts/fetch_pvcgn.py --cities shanghai`
+# produces it when something does.
+
+id: E7_hzmetro
+question: >-
+  Do the zero-shot forecasting results hold on real directional flow across a
+  160-series metro network, under the same protocol as the simulated sites?
+
+sites:
+  - hzmetro
+
+seeds: [0, 1, 2]
+
+protocol:
+  # HZMetro is sampled at 900 s, so 96 steps of context is one calendar day. It spans the
+  # overnight gap and therefore carries roughly 23 unobserved steps, which is correct
+  # rather than wasteful: it is what lets seasonal_naive compare a step against the same
+  # time yesterday, and it is the shortest context that keeps that baseline in the
+  # comparison at all. The horizons are 15, 30, 60 and 120 minutes -- the spec's shortest
+  # horizon is below this dataset's resolution, so the ladder starts at one step and
+  # extends further instead.
+  context_length: 96
+  horizons: [1, 2, 4, 8]
+  stride: 2
+  quantiles: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+  # Unset means one day at the site's own interval, which is 96 steps here. That spans
+  # the overnight gap on purpose: the seasonal-naive denominator should compare a step
+  # with the same time yesterday, and yesterday's 09:00 is 96 steps back whether or not
+  # the intervening night was recorded.
+  mase_season: null
+  # There is no data overnight, so 23% of the steps on the regular grid are unobserved
+  # and an origin landing in the small hours has nothing to condition on or score
+  # against. Dropped and counted in the manifest.
+  require_observed: true
+
+sensor_profile: clean      # the data is already whatever the fare gates gave
+covariates: all
+reconcilers: [none]
+
+methods:
+  - name: last_value
+  - name: seasonal_naive
+  - name: historical_average
+  - name: timesfm3_univariate
+  - name: timesfm3_multivariate
+  - name: chronos2_multivariate
+  - name: toto2
+
+notes:
+  reference_method: seasonal_naive+none
+  caveat: >-
+    A metro network is not a museum. Commuter flow is driven by a timetable and a working
+    week, not by dwell at exhibits, and the peaks are two orders of magnitude larger than
+    anything a gallery sees. This experiment supports a claim about zero-shot forecasting
+    of directional pedestrian flow on a real graph at scale; it supports no claim about
+    visitor behaviour in heritage settings.

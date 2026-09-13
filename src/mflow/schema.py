@@ -28,6 +28,7 @@ conservation constraints.
 
 from __future__ import annotations
 
+import math
 from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -457,17 +458,28 @@ class SiteData:
         return stamps
 
     def node_capacity(self) -> dict[str, float]:
-        """Map node id to capacity in persons."""
+        """Map node id to capacity in persons, with an unknown capacity as infinity.
+
+        A real source may simply not publish a capacity: PVCGN gives metro ridership
+        without any statement of how many people a station platform holds. A blank
+        ``capacity_persons`` records that, and the correct upper bound for an unknown
+        capacity is ``inf`` rather than a plausible-looking guess, which would make the
+        box constraint bind somewhere the data never said it should.
+        """
         return {
-            str(n): float(c)
+            str(n): math.inf if pd.isna(c) else float(c)
             for n, c in zip(self.nodes["node_id"], self.nodes["capacity_persons"], strict=True)
         }
 
     def edge_capacity_per_interval(self) -> dict[str, float]:
-        """Map edge id to the maximum number of crossings within one sampling interval."""
+        """Map edge id to the maximum crossings in one interval, unknown meaning infinity.
+
+        As with :meth:`node_capacity`: a source that does not publish a doorway or
+        fare-gate throughput leaves the column blank, and an unknown bound is infinite.
+        """
         minutes = self.meta.interval_seconds / 60.0
         return {
-            str(e): float(c) * minutes
+            str(e): math.inf if pd.isna(c) else float(c) * minutes
             for e, c in zip(
                 self.edges["edge_id"], self.edges["capacity_persons_per_min"], strict=True
             )
@@ -787,10 +799,19 @@ def _validate_nodes(data: SiteData, root: Path) -> None:
         negative = nodes.loc[pd.to_numeric(nodes[column], errors="coerce") < 0, "node_id"]
         if len(negative) > 0:
             _fail(root, f"negative {column} for nodes {_sample(negative)}")
+    # A blank capacity is permitted and means the source publishes none -- PVCGN gives
+    # metro ridership without saying how many people a platform holds. It is read as an
+    # unbounded node. A capacity of zero is a different claim, namely that nobody fits,
+    # and for an interior node that is always a mistake.
     interior = nodes[nodes["kind"] != OUTSIDE_NODE]
-    zero_cap = interior.loc[interior["capacity_persons"] <= 0, "node_id"]
+    capacity = pd.to_numeric(interior["capacity_persons"], errors="coerce")
+    zero_cap = interior.loc[capacity.notna() & (capacity <= 0), "node_id"]
     if len(zero_cap) > 0:
-        _fail(root, f"interior nodes must have positive capacity_persons: {_sample(zero_cap)}")
+        _fail(
+            root,
+            f"interior nodes must have positive capacity_persons, or none at all if the "
+            f"source does not publish one: {_sample(zero_cap)}",
+        )
 
 
 def _validate_edges(data: SiteData, root: Path) -> None:
@@ -808,9 +829,16 @@ def _validate_edges(data: SiteData, root: Path) -> None:
     self_loops = edges.loc[edges["src_node"] == edges["dst_node"], "edge_id"]
     if len(self_loops) > 0:
         _fail(root, f"self-loop edges are not part of the contract: {_sample(self_loops)}")
-    nonpositive = edges.loc[edges["capacity_persons_per_min"] <= 0, "edge_id"]
+    # Blank means the source publishes no throughput for this doorway, read as unbounded.
+    # Zero is the different and always mistaken claim that nobody can cross it.
+    throughput = pd.to_numeric(edges["capacity_persons_per_min"], errors="coerce")
+    nonpositive = edges.loc[throughput.notna() & (throughput <= 0), "edge_id"]
     if len(nonpositive) > 0:
-        _fail(root, f"edges must have positive capacity_persons_per_min: {_sample(nonpositive)}")
+        _fail(
+            root,
+            "edges must have positive capacity_persons_per_min, or none at all if the "
+            f"source does not publish one: {_sample(nonpositive)}",
+        )
 
     known_edges = set(edges["edge_id"].astype(str))
     reverse = {

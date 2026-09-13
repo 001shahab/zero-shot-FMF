@@ -25,6 +25,8 @@ from mflow.data.fetch import (
     sha256,
     verify_download,
 )
+from mflow.data.pvcgn import PvcgnAdapter
+from mflow.data.robod import RobodAdapter
 
 __all__ = [
     "DOWNLOAD_MANIFEST",
@@ -34,6 +36,8 @@ __all__ = [
     "DownloadManifest",
     "FetchError",
     "FileRecord",
+    "PvcgnAdapter",
+    "RobodAdapter",
     "download",
     "extract",
     "fetch_source",
