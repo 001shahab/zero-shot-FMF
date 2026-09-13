@@ -109,7 +109,7 @@ sensor dropout forces the conservation anchor to be carried forward, the number 
 it was carried appears in `reconciliation.parquet` as `anchor_staleness_steps`.
 
 **6. Typed, linted, tested.** Python 3.11+, type hints on every public function, `ruff`
-and `mypy --strict`-adjacent clean, 367 tests.
+and `mypy --strict`-adjacent clean, 372 tests.
 
 ---
 
@@ -326,7 +326,22 @@ lazily inside the factories, so `mflow list` does not download a checkpoint.
 | Graph NN | `dcrnn`, `stgcn`, `graph_wavenet` |
 
 Weights come from `google/timesfm-3.0-pytorch`, `google/timesfm-2.5-200m-pytorch`,
-`amazon/chronos-2` and `Datadog/Toto-2.0-313m`.
+`amazon/chronos-2` and `Datadog/Toto-2.0-313m`. All four have been loaded from their real
+checkpoints and checked against a held-out origin: finite, monotone across quantiles, and
+better than `last_value` on MAE.
+
+Two things that check turned up, both of which a mocked test would have missed:
+
+- **Chronos names its series in a column called `target_name`, not `target`.** The
+  wrapper used to probe for `target` and, on not finding it, hand every series the first
+  series' rows. Nothing complained — the frame had the right number of rows and the
+  quantiles were monotone — and the only symptom was a multivariate MAE 2.6× the
+  univariate one. The column is now required rather than probed, so the same class of
+  mismatch stops the run instead of producing a plausible wrong number.
+- **Chronos cannot take a timezone-aware timestamp column**, because it normalises one
+  with `.to_numpy().view("int64")`. It is handed naive UTC, which loses nothing: the
+  column exists only to establish order and spacing, and nothing it returns is a
+  timestamp.
 
 ### M5 — topology-constrained reconciliation
 
@@ -595,7 +610,7 @@ mypy src
 pytest
 ```
 
-The suite is 367 tests and runs in about twenty-seven seconds. Tests needing downloaded
+The suite is 372 tests and runs in about twenty-seven seconds. Tests needing downloaded
 weights or fetched datasets are opt-in:
 
 ```bash
@@ -621,7 +636,7 @@ only parses when told to target 3.12 or later.
 | M2 Tier A simulator, three sites | complete |
 | M2 Tier B JuPedSim | **not implemented** — optional in the specification; writing it against an unverified API would breach ground rule 1 |
 | M3 sensor degradation, four profiles | complete |
-| M4 forecaster interface and implementations | complete |
+| M4 forecaster interface and implementations | complete — all four foundation wrappers verified against their real checkpoints |
 | M5 reconciliation | complete |
 | M6 protocol, metrics, significance, harness, risk heads, reporting | complete |
 | M7 experiment configs E1–E7, runner, CLI | complete |
@@ -631,19 +646,34 @@ only parses when told to target 3.12 or later.
 | A real site measuring occupancy **and** flow | **not started** — the gap that leaves the reconciliation claim resting on simulation; ATC indoor tracking is the candidate |
 | Melbourne, UWB, DCRNN adapters | **not started** |
 
-The simulated sites currently in `data/canonical/` are short. `sim_house_museum` has 30
-days; `sim_palazzo` and `sim_national` have 2. Regenerate them before running E1–E6:
+The simulated sites in `data/canonical/` are generated, not committed. Build them with:
 
 ```bash
-mflow simulate configs/sites/palazzo.yaml  --days 120 --seed 0
-mflow simulate configs/sites/national.yaml --days 120 --seed 0
+mflow simulate configs/sites/house_museum.yaml --days 480 --seed 0
+mflow simulate configs/sites/palazzo.yaml      --days 120 --seed 0
+mflow simulate configs/sites/national.yaml     --days 120 --seed 0
 ```
 
-E4 needs more: its 30- and 90-day budgets require training windows at least that long,
-which with the default 0.6/0.2/0.2 split means records of 150 and 450 days. The runner
-refuses a budget the record cannot meet rather than truncating it, so a short site fails
-at the first run instead of producing a curve that appears to flatten for reasons that are
-an artefact of the data.
+The house museum gets 480 days because E4 needs it: its 30- and 90-day training budgets
+require windows at least that long, which under the default 0.6/0.2/0.2 split means a
+record of 450 days. The runner refuses a budget the record cannot meet rather than
+truncating it, so a short site fails at the first run instead of producing a curve that
+appears to flatten for reasons that are an artefact of the data.
+
+### Cost of a full run
+
+Measured on this machine (Apple silicon, MPS), per forecast origin over 24 series with a
+1440-step context: Chronos-2 multivariate 0.8 s, TimesFM 3 multivariate 1.1 s, TimesFM 3
+univariate 2.5 s, Chronos-2 univariate 3.3 s, **Toto 2.0 25.5 s**.
+
+Toto at 313m parameters dominates everything else by more than an order of magnitude, and
+E1's test window at `stride: 60` holds a few thousand origins. A full sweep is therefore
+not an overnight job at that stride, and the honest options are to cap origins with
+`max_origins` — the protocol thins evenly, so a capped run is a uniform subsample of the
+same window rather than a different one — or to drop to a smaller Toto checkpoint.
+Whichever is chosen has to be recorded in the config before the runs start, not discovered
+afterwards; `ProtocolConfig.check_origin_budget` warns when a cap leaves too few origins
+for a Diebold-Mariano test at the longest horizon.
 
 ---
 

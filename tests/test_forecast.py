@@ -215,3 +215,82 @@ def test_historical_average_uses_time_of_day_buckets(panel: Panel) -> None:
     # The toy site has a smooth midday peak, so the bucket means must vary across the
     # horizon rather than collapsing to a single constant.
     assert float(np.std(forecast[:, :, 4])) > 0.0
+
+
+# --------------------------------------------------------------------------- #
+# Chronos result mapping
+# --------------------------------------------------------------------------- #
+#
+# Chronos names each series in a column whose name differs between its two modes:
+# `target_name` when several series share one `id`, `id` when each series is its own.
+# An earlier version of the wrapper probed for a column called `target` and, not finding
+# it, handed every series the same rows. Nothing complained -- the frame had the right
+# number of rows and the quantiles were monotone -- and the multivariate MAE came out
+# 2.6x the univariate one on a real checkpoint. These pin the mapping without needing
+# the weights.
+
+
+class _FakePipeline:
+    """Stands in for Chronos2Pipeline, returning frames shaped like the real ones."""
+
+    def __init__(self, key: str, per_series: dict[str, list[float]]) -> None:
+        self.key = key
+        self.per_series = per_series
+
+    def predict_df(self, context_df, *, prediction_length, quantile_levels, **kwargs):
+        import pandas as pd
+
+        rows = []
+        for name, values in self.per_series.items():
+            for step in range(prediction_length):
+                row = {"id": name, self.key: name}
+                row.update({str(level): values[step] for level in quantile_levels})
+                rows.append(row)
+        return pd.DataFrame(rows)
+
+
+def _chronos_with(monkeypatch, panel, *, multivariate, key):
+    from mflow.forecast import foundation
+
+    per_series = {
+        sid: [float(i * 100 + step) for step in range(HORIZON)]
+        for i, sid in enumerate(panel.series_ids)
+    }
+    model = foundation.Chronos2(multivariate=multivariate, seed=0)
+    monkeypatch.setattr(model, "_load", lambda: _FakePipeline(key, per_series))
+    return model, per_series
+
+
+@pytest.mark.parametrize(
+    ("multivariate", "key"), [(True, "target_name"), (False, "id")]
+)
+def test_each_series_gets_its_own_chronos_forecast(
+    monkeypatch, panel: Panel, multivariate: bool, key: str
+) -> None:
+    model, per_series = _chronos_with(monkeypatch, panel, multivariate=multivariate, key=key)
+    out = model.predict(panel, horizon=HORIZON, quantiles=[0.1, 0.5, 0.9])
+    for i, sid in enumerate(panel.series_ids):
+        assert np.allclose(out[i, :, 1], per_series[sid]), f"{sid} got another series' rows"
+
+
+def test_a_chronos_frame_with_no_series_label_stops_the_run(
+    monkeypatch, panel: Panel
+) -> None:
+    # The failure the old fallback hid. Silently reusing one series' forecast for all of
+    # them is worse than not producing a number.
+    model, _ = _chronos_with(monkeypatch, panel, multivariate=True, key="something_else")
+    with pytest.raises(ForecastError, match="no 'target_name' to tell the series apart"):
+        model.predict(panel, horizon=HORIZON, quantiles=[0.1, 0.5, 0.9])
+
+
+def test_chronos_is_handed_naive_timestamps(panel: Panel) -> None:
+    # chronos.df_utils.normalize_df does `.to_numpy().view("int64")`, which a
+    # timezone-aware column does not survive.
+    from mflow.forecast import foundation
+
+    context_df, future_df, _targets = foundation.Chronos2(
+        multivariate=True, seed=0
+    )._frames(panel, horizon=HORIZON)
+    assert context_df["timestamp"].dt.tz is None
+    assert future_df["timestamp"].dt.tz is None
+    assert context_df["timestamp"].to_numpy().view("int64") is not None

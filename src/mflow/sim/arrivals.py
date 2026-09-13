@@ -127,14 +127,13 @@ def sample_day_arrivals(
     for group in config.groups:
         if not _group_occurs(group, day):
             continue
-        size = round(generator.normal(group.size_mean, group.size_sd))
-        size = max(1, size)
-        step = _minutes_since_midnight(group.time) * 60 // config.step_seconds
+        size = max(1, round(float(generator.normal(group.size_mean, group.size_sd))))
+        group_step = int(_minutes_since_midnight(group.time) * 60 // config.step_seconds)
         entrance = group.entrance or names[0]
         for _ in range(size):
             arrivals.append(
                 Arrival(
-                    step=step,
+                    step=group_step,
                     entrance=entrance,
                     group_id=group.id,
                     cohesion=group.cohesion,

@@ -17,6 +17,7 @@ reported result; every manifest records which of the two it was.
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from collections.abc import Sequence
 from pathlib import Path
@@ -47,7 +48,18 @@ def load_environment(path: str | Path | None = None) -> dict[str, str]:
     if not target.is_file():
         return {}
     load_dotenv(target, override=False)
-    return {key: "set" for key, value in dotenv_values(target).items() if value}
+    found = {key: "set" for key, value in dotenv_values(target).items() if value}
+
+    # huggingface_hub reads HF_TOKEN from the environment for every request it makes on
+    # its own account, including the repository resolution that happens before a wrapper
+    # gets to pass `token=` to anything. Without the alias a gated checkpoint fails as an
+    # anonymous 401 from inside the library rather than as a missing-credentials error
+    # here, so mirror the key under the name the library actually looks for.
+    token = os.environ.get("HUGGINGFACE_API_KEY")
+    if token and not os.environ.get("HF_TOKEN"):
+        os.environ["HF_TOKEN"] = token
+        found["HF_TOKEN"] = "set from HUGGINGFACE_API_KEY"
+    return found
 
 
 # --------------------------------------------------------------------------- #

@@ -13,7 +13,12 @@ authors = [{ name = "Shahab Anbarjafari", email = "shb@3sholding.com" }]
 keywords = ["time-series", "forecasting", "foundation-models", "hierarchical-reconciliation", "museums"]
 
 dependencies = [
-  "numpy>=1.26",
+  # Upper bound, not a preference: against numpy 2.5 every `pd.Timedelta(seconds=...)`
+  # in pandas 2.3 raises a DeprecationWarning from inside pandas about the generic numpy
+  # timedelta unit, and the warning says it becomes an error. The call is documented
+  # pandas API and this project makes it on every panel, so the fix belongs upstream.
+  # Revisit when pandas releases a version that is quiet against 2.5.
+  "numpy>=1.26,<2.5",
   "pandas>=2.1",
   "polars>=1.0",
   "pyarrow>=15",
@@ -38,7 +43,9 @@ dependencies = [
 # Foundation models. Installed separately because each pulls large weights.
 timesfm = ["timesfm>=3.0", "torch>=2.2"]
 chronos = ["chronos-forecasting>=2.0"]
-toto = ["toto-models>=2.0"]
+# The umbrella package is at 1.x and pulls in `toto-2>=2.0.0`, which provides the
+# `toto2` module. Pinning it at >=2.0 asks PyPI for a release that does not exist.
+toto = ["toto-models>=1.0"]
 # Tier B continuous-space simulation.
 continuous = ["jupedsim>=1.2"]
 dev = [

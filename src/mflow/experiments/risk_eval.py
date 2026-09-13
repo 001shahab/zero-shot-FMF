@@ -175,7 +175,7 @@ def _congestion_rows(
             node = parse_series_id(series_ids[index])[1]
             threshold = thresholds[node]
             probability = exceedance_probability(forecast[index], plan.quantiles, threshold)
-            alerts.append((probability >= config.alert_probability).any(axis=1))
+            alerts.append(np.asarray((probability >= config.alert_probability).any(axis=1)))
             breaches.append(first_breach_step(actual[index], threshold))
             row = truth_panel.index_of(series_ids[index])
             last = np.array(

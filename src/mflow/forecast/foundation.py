@@ -591,12 +591,17 @@ class Chronos2(_ZeroShotForecaster):
 
         context = self._context(panel)
         context_len = context.shape[1]
-        stamps = panel.timestamps[-context_len:]
+        # Chronos normalises a timestamp column with ``.to_numpy().view("int64")``,
+        # which a timezone-aware dtype does not survive (verified against
+        # chronos-forecasting 2.3.2, ``chronos.df_utils.normalize_df``). It only reads
+        # the column to establish order and spacing, and the panel's grid is regular
+        # UTC, so dropping the zone here loses nothing. Everything the model returns is
+        # positional, so no timestamp comes back out.
+        stamps = panel.timestamps[-context_len:].tz_convert("UTC").tz_localize(None)
         future_stamps = pd.date_range(
             stamps[-1] + pd.Timedelta(seconds=panel.interval_seconds),
             periods=horizon,
             freq=pd.Timedelta(seconds=panel.interval_seconds),
-            tz=stamps.tz,
         )
 
         if self.multivariate:
@@ -666,18 +671,26 @@ class Chronos2(_ZeroShotForecaster):
 
         out = np.empty((panel.n_series, horizon, len(levels)), dtype=np.float64)
         columns = [str(level) for level in levels]
-        if self.multivariate:
-            for i, sid in enumerate(panel.series_ids):
-                rows = (
-                    predictions[predictions["target"] == sid]
-                    if "target" in predictions
-                    else predictions
+        # In multivariate mode every series shares one ``id`` and is told apart by
+        # ``target_name``; in univariate mode each series is its own ``id``. Verified
+        # against chronos-forecasting 2.3.2. Getting this wrong is silent -- the frame
+        # still has the right number of rows -- so the key column is required rather
+        # than probed, and a missing one stops the run.
+        key = "target_name" if self.multivariate else "id"
+        if key not in predictions.columns:
+            raise ForecastError(
+                f"Chronos returned columns {list(predictions.columns)} with no {key!r} to "
+                f"tell the series apart. The wrapper cannot map forecasts back to series "
+                f"without it, and guessing the order would silently mislabel every one."
+            )
+        for i, sid in enumerate(panel.series_ids):
+            rows = predictions.loc[predictions[key] == sid, columns]
+            if len(rows) != horizon:
+                raise ForecastError(
+                    f"Chronos returned {len(rows)} rows for series {sid!r}, expected "
+                    f"{horizon}"
                 )
-                out[i] = rows[columns].to_numpy()[:horizon]
-        else:
-            for i, sid in enumerate(panel.series_ids):
-                rows = predictions[predictions["id"] == sid]
-                out[i] = rows[columns].to_numpy()[:horizon]
+            out[i] = rows.to_numpy()
         return self._validate_output(np.maximum(out, 0.0), panel, horizon, levels, self.name)
 
 

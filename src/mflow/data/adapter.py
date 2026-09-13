@@ -25,7 +25,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Final
 
 import pandas as pd
 
@@ -144,6 +144,26 @@ class Adapter(ABC):
 # --------------------------------------------------------------------------- #
 
 
+def _localise_errors() -> tuple[type[Exception], ...]:
+    """What ``tz_localize`` raises on an ambiguous or non-existent local time.
+
+    It depends on what else is installed, which is a trap. On its own pandas raises a
+    ``ValueError``; when pytz is present -- and it arrives transitively, in this project
+    through gluonts behind the Toto wrapper -- pandas raises
+    ``pytz.exceptions.InvalidTimeError`` instead, which is not a ``ValueError`` at all.
+    Catching only one of them means the guard below quietly stops guarding the moment an
+    unrelated dependency changes, so both are named.
+    """
+    try:
+        from pytz.exceptions import InvalidTimeError
+    except ImportError:
+        return (ValueError,)
+    return (ValueError, InvalidTimeError)
+
+
+_LOCALISE_ERRORS: Final[tuple[type[Exception], ...]] = _localise_errors()
+
+
 def to_utc(series: pd.Series, timezone: str) -> pd.Series:
     """Localise naive local timestamps to ``timezone`` and convert to UTC.
 
@@ -160,9 +180,8 @@ def to_utc(series: pd.Series, timezone: str) -> pd.Series:
     if stamps.dt.tz is not None:
         return stamps.dt.tz_convert("UTC")
     try:
-        # pandas raises ValueError for both the ambiguous and the non-existent case.
         localised = stamps.dt.tz_localize(timezone, ambiguous="raise", nonexistent="raise")
-    except ValueError as error:
+    except _LOCALISE_ERRORS as error:
         raise AdapterError(
             f"could not localise timestamps to {timezone!r}: {error}. The record spans a "
             "daylight-saving transition; the adapter must say which side each ambiguous "

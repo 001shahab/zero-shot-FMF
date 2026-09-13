@@ -139,7 +139,9 @@ def forecast_alerts(
             f"alert_probability must lie strictly inside (0, 1), got {alert_probability}"
         )
     probability = exceedance_probability(quantile_forecast, quantile_levels, threshold)
-    return (probability >= alert_probability).any(axis=1)
+    # `any(axis=...)` is typed as possibly-scalar because `axis` may be omitted; it is
+    # not omitted here, so the result is always an array.
+    return np.asarray((probability >= alert_probability).any(axis=1))
 
 
 def first_breach_step(actual: np.ndarray, threshold: float) -> np.ndarray:
