@@ -484,3 +484,73 @@ def test_build_report_on_an_empty_results_tree_raises(tmp_path) -> None:
     (tmp_path / "results").mkdir()
     with pytest.raises(ReportError, match="no completed run"):
         build_report(tmp_path / "report", root=tmp_path / "results")
+
+
+# --------------------------------------------------------------------------- #
+# Sites that measure only one side of the panel
+# --------------------------------------------------------------------------- #
+#
+# Both real datasets in this project are half-panels: ROBOD counts people in rooms and
+# nothing at the doorways, PVCGN counts fare-gate crossings and nothing in the station.
+# Reporting a real E7_robod run turned up two places that assumed a full panel, and both
+# of them stopped the report rather than degrading. Neither was caught by a suite whose
+# fixtures always build occupancy, flow and all.
+
+
+def half_panel_metrics(methods: dict[str, float], group: str, **kwargs) -> pd.DataFrame:
+    """Metrics from a site that measures `group` and nothing else."""
+    metrics = make_metrics(methods, **kwargs)
+    return metrics[metrics["series_group"].isin([group, "all"])].reset_index(drop=True)
+
+
+def test_a_site_with_no_flow_still_gets_a_main_table() -> None:
+    metrics = half_panel_metrics({"good": 0.5, "weak": 1.0}, "occupancy")
+    table = main_table(metrics, reference="weak")
+    assert set(table["series_group"]) == {"occupancy"}
+    assert not table.empty
+
+
+def test_a_flow_only_site_still_gets_a_main_table() -> None:
+    metrics = half_panel_metrics({"good": 0.5, "weak": 1.0}, "flow")
+    assert set(main_table(metrics, reference="weak")["series_group"]) == {"flow"}
+
+
+def test_naming_a_group_explicitly_still_demands_it() -> None:
+    # Defaulting to what is present must not turn a run that was supposed to evaluate
+    # flow and did not into a silently smaller table.
+    metrics = half_panel_metrics({"good": 0.5, "weak": 1.0}, "occupancy")
+    with pytest.raises(ReportError, match="no metrics for group 'flow'"):
+        main_table(metrics, reference="weak", groups=("occupancy", "flow"))
+
+
+def test_metrics_with_neither_group_say_so() -> None:
+    metrics = make_metrics({"good": 0.5, "weak": 1.0})
+    metrics = metrics[metrics["series_group"] == "all"].reset_index(drop=True)
+    with pytest.raises(ReportError, match="none of which is 'occupancy' or 'flow'"):
+        main_table(metrics, reference="weak")
+
+
+def test_a_report_with_no_reconciled_run_skips_that_table_and_says_why() -> None:
+    # `reconciler: none` everywhere is the normal state for a half-panel site, not a
+    # malformed run, so it is a recorded skip rather than a crash.
+    metrics = half_panel_metrics({"good": 0.5, "weak": 1.0}, "occupancy")
+    with pytest.raises(ReportError, match="no run applied a reconciler"):
+        reconciliation_table(metrics, pd.DataFrame())
+
+
+def test_build_report_writes_the_main_table_for_a_half_panel_site(tmp_path) -> None:
+    metrics = half_panel_metrics({"good": 0.5, "weak": 1.0}, "occupancy")
+    results = tmp_path / "results"
+    # The harness writes reconciliation.parquet even when nothing was reconciled, so the
+    # frame exists and is empty rather than being absent.
+    write_run(
+        results,
+        "E7_half_s0",
+        "E7_half",
+        metrics,
+        extra_frames={RECONCILIATION_FILE: pd.DataFrame()},
+    )
+    written = build_report(tmp_path / "paper", root=results, reference="weak")
+    assert "main" in written
+    report = json.loads((tmp_path / "paper" / "report.json").read_text())
+    assert "no run applied a reconciler" in report["skipped"]["reconciliation"]

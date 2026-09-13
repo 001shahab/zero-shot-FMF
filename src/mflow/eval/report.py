@@ -201,7 +201,7 @@ def main_table(
     *,
     reference: str,
     horizons: Sequence[int] | None = None,
-    groups: Sequence[str] = ("occupancy", "flow"),
+    groups: Sequence[str] | None = None,
     alpha: float = 0.05,
 ) -> pd.DataFrame:
     """Methods against horizons, MAE and WQL, occupancy and flow separately.
@@ -227,7 +227,12 @@ def main_table(
         metrics: per-origin metrics, as written by the harness.
         reference: the method every other is tested against.
         horizons: which horizons to report. Defaults to all present.
-        groups: which series groups to report.
+        groups: which series groups to report. Defaults to the ones the runs actually
+            evaluated, which is not always both of occupancy and flow: ROBOD counts
+            people in rooms and measures nothing at the doorways, and asking for a flow
+            row there would fail on a group that was never going to exist. Naming groups
+            explicitly still demands them, so a run that was *supposed* to produce flow
+            and did not is still an error.
         alpha: family-wise error rate.
 
     Raises:
@@ -236,6 +241,15 @@ def main_table(
     """
     _require_method(metrics, reference)
     wanted = sorted(metrics["horizon"].unique()) if horizons is None else list(horizons)
+    if groups is None:
+        present = set(metrics["series_group"].unique())
+        # "all" is the pooled group and would duplicate the others in the same table.
+        groups = [g for g in ("occupancy", "flow") if g in present]
+        if not groups:
+            raise ReportError(
+                f"the runs report series groups {sorted(present)}, none of which is "
+                "'occupancy' or 'flow', so there is nothing to put in the main table"
+            )
 
     rows: list[dict[str, Any]] = []
     for group in groups:
@@ -354,6 +368,16 @@ def reconciliation_table(
     accuracy, so both columns have to appear side by side; reporting the residual alone
     would hide a projection that achieved it by moving the forecast somewhere silly.
     """
+    if "method" not in reconciliation.columns:
+        # Every run used `reconciler: none`, so nothing was projected and there is no
+        # before-and-after to tabulate. That is the normal state for a site measuring
+        # only one side of the conservation identity, which both real sites in this
+        # project do, so it is reported as a skipped table rather than a crash.
+        raise ReportError(
+            "no run applied a reconciler, so there is no coherence to report. A site "
+            "that measures only occupancy or only flow cannot be reconciled; see "
+            "mflow.experiments.runner._check_reconcilable."
+        )
     accuracy = (
         metrics[metrics["series_group"] == "all"]
         .groupby(["method", "horizon"], as_index=False)

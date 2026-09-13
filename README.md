@@ -29,6 +29,7 @@ refuses to emit a number no run produced.
 ## Table of contents
 
 - [What is being claimed](#what-is-being-claimed)
+  - [The one result there is so far](#the-one-result-there-is-so-far)
 - [Ground rules](#ground-rules)
 - [Installation](#installation)
 - [Quick start](#quick-start)
@@ -55,9 +56,10 @@ refuses to emit a number no run produced.
 
 ## What is being claimed
 
-Eight experiments, each answering one question. None of their results are in this README,
-because writing a number here that no logged run produced would violate the project's
-second ground rule. Run them and read `paper/tables/`.
+Eight experiments, each answering one question. Only one of them has been run so far, and
+only its numbers appear below; writing a number here that no logged run produced would
+violate the project's second ground rule. Run the rest and read `paper/tables/`, which
+`mflow report` rebuilds from `results/` and which is not committed for the same reason.
 
 | | Question | Config |
 |---|---|---|
@@ -69,6 +71,33 @@ second ground rule. Run them and read `paper/tables/`.
 | **E6** | Does the forecast change a decision an operator would make? | `configs/experiments/E6.yaml` |
 | **E7a** | Does zero-shot forecasting transfer to a real building? | `configs/experiments/E7_robod.yaml` |
 | **E7b** | Does it transfer to real network flow at scale? | `configs/experiments/E7_hzmetro.yaml` |
+
+### The one result there is so far
+
+E7a, on ROBOD: three seeds, 783 scored origins, five rooms at five-minute resolution,
+tested against `last_value` with Diebold–Mariano and Holm–Bonferroni correction within
+each horizon. MASE, lower is better; a star is significantly better than `last_value`.
+
+| Method | 5 min | 15 min | 30 min | 60 min |
+|---|---|---|---|---|
+| `toto2` | 0.181 | 0.338 | **0.396** \* | **0.458** \* |
+| `chronos2_multivariate` | 0.219 | 0.362 | 0.411 | 0.471 \* |
+| `timesfm3_univariate` | 0.199 | 0.353 | 0.414 | 0.483 \* |
+| `timesfm3_multivariate` | 0.189 | 0.364 | 0.437 | 0.515 \* |
+| `last_value` | **0.164** | 0.361 | 0.449 | 0.538 |
+| `seasonal_naive` | 0.716 | 0.777 | 0.769 | 0.753 |
+| `historical_average` | 0.773 | 0.832 | 0.827 | 0.815 |
+
+There is a crossover, and it is the point. At five minutes nothing beats persistence and
+no foundation model is significantly better than it; room occupancy simply does not move
+much in five minutes. By thirty minutes Toto is significantly ahead, and by an hour all
+four foundation models are, with Toto cutting CRPS from 0.508 to 0.373 — a 27% reduction
+in probabilistic error over the baseline a building already has. Interval coverage sits at
+0.88–0.91 against a nominal 0.80, so the fans are somewhat wide rather than overconfident.
+
+The two seasonal baselines are far behind everything, which is a fact about ROBOD rather
+than about them: the record was collected in weekday blocks around a two-month vacation
+hole, so "the same time yesterday" is often not a comparable day, or not a recorded one.
 
 E7 is the one that makes the work publishable. Everything before it is measured on a
 simulator whose parameters were chosen by the same person making the claim.
@@ -109,7 +138,7 @@ sensor dropout forces the conservation anchor to be carried forward, the number 
 it was carried appears in `reconciliation.parquet` as `anchor_staleness_steps`.
 
 **6. Typed, linted, tested.** Python 3.11+, type hints on every public function, `ruff`
-and `mypy --strict`-adjacent clean, 372 tests.
+and `mypy --strict`-adjacent clean, 378 tests.
 
 ---
 
@@ -610,7 +639,7 @@ mypy src
 pytest
 ```
 
-The suite is 372 tests and runs in about twenty-seven seconds. Tests needing downloaded
+The suite is 378 tests and runs in about twenty-five seconds. Tests needing downloaded
 weights or fetched datasets are opt-in:
 
 ```bash
@@ -643,6 +672,8 @@ only parses when told to target 3.12 or later.
 | Dataset acquisition framework (download, checksums, provenance, adapter base) | complete |
 | ROBOD adapter and `scripts/fetch_robod.py` | complete — `E7_robod` runs end to end |
 | PVCGN adapter and `scripts/fetch_pvcgn.py` | complete — `E7_hzmetro` runs end to end |
+| **E7a executed** | three seeds, 783 scored origins, logged under `results/` |
+| E1–E6, E7b executed | **not yet run** |
 | A real site measuring occupancy **and** flow | **not started** — the gap that leaves the reconciliation claim resting on simulation; ATC indoor tracking is the candidate |
 | Melbourne, UWB, DCRNN adapters | **not started** |
 

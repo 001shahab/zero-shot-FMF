@@ -36,3 +36,8 @@ htmlcov/
 
 # Scratch directories created by dataset-format probes.
 .robod_probe/
+
+# Report artefacts are derived: `mflow report` rebuilds them from results/, and results/
+# is itself rebuilt from the run manifests. Committing a table would put a number in the
+# repository whose provenance is a file that is not here.
+/paper/
