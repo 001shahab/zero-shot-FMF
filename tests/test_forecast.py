@@ -294,3 +294,32 @@ def test_chronos_is_handed_naive_timestamps(panel: Panel) -> None:
     assert context_df["timestamp"].dt.tz is None
     assert future_df["timestamp"].dt.tz is None
     assert context_df["timestamp"].to_numpy().view("int64") is not None
+
+
+def test_dcrnn_strides_its_training_windows(toy_site, toy_graph) -> None:
+    # At stride one a long panel asks for a window per step, each overlapping its
+    # neighbour by all but one value. A 480-day minute-resolution panel yields 412,285
+    # of them, about 57 TB of float32, and training never starts. The cap is what keeps
+    # the window count independent of how long the record happens to be.
+    from mflow.forecast.graphnn import DCRNN
+
+    panel = toy_site.to_panel()
+    model = DCRNN(
+        toy_graph, context_length=8, horizon=2, epochs=1, max_windows=16
+    )
+    model.fit(panel)
+    available = panel.n_timesteps - (8 + 2) + 1
+    assert model.window_stride >= 1
+    assert len(range(0, available, model.window_stride)) <= 16
+    assert model.describe()["window_stride"] == model.window_stride
+
+
+def test_a_short_panel_still_uses_every_window(toy_site, toy_graph) -> None:
+    from mflow.forecast.graphnn import DCRNN
+
+    panel = toy_site.to_panel()
+    model = DCRNN(
+        toy_graph, context_length=8, horizon=2, epochs=1, max_windows=1_000_000
+    )
+    model.fit(panel)
+    assert model.window_stride == 1, "a panel under the cap should not be thinned"

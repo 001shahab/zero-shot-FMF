@@ -26,6 +26,7 @@ table empty.
 
 from __future__ import annotations
 
+import math
 from collections.abc import Sequence
 from typing import Any
 
@@ -301,6 +302,13 @@ class _GraphForecaster(Forecaster):
         epochs, batch_size, learning_rate, weight_decay: optimisation settings.
         validation_fraction: tail of the training panel held out for early stopping.
         patience: early-stopping patience in epochs.
+        max_windows: the most training windows to cut from the panel. Windows are taken
+            at a stride chosen to respect this, rather than at every step. At
+            one-minute sampling a stride of one is not a richer training set, it is the
+            same set counted many times -- consecutive 1440-step windows share 1439 of
+            their values -- and a 480-day panel yields 412,285 of them, which is about
+            57 TB of float32 and does not finish. The stride actually used is recorded
+            in :meth:`describe`.
         device: torch device; ``auto`` prefers CUDA, then MPS.
     """
 
@@ -321,6 +329,7 @@ class _GraphForecaster(Forecaster):
         weight_decay: float = 1e-5,
         validation_fraction: float = 0.15,
         patience: int = 8,
+        max_windows: int = 4096,
         device: str = "cpu",
         torch_threads: int = 1,
         seed: int = 0,
@@ -336,6 +345,8 @@ class _GraphForecaster(Forecaster):
         self.weight_decay = weight_decay
         self.validation_fraction = validation_fraction
         self.patience = patience
+        self.max_windows = max_windows
+        self.window_stride: int | None = None
         self.device = device
         self.torch_threads = torch_threads
         self._module: nn.Module | None = None
@@ -376,7 +387,13 @@ class _GraphForecaster(Forecaster):
                 f"{self.name} needs at least {span + 1} steps of training data "
                 f"(context {self.context_length} + horizon {self.horizon}), got {total}"
             )
-        starts = np.arange(0, total - span + 1)
+        # Stride, not every step. See `max_windows` in the class docstring: at stride one
+        # a 480-day minute-resolution panel asks for 412,285 windows that overlap by
+        # 99.93%, which is neither affordable nor more informative than a strided sample.
+        available = total - span + 1
+        stride = max(1, math.ceil(available / self.max_windows))
+        self.window_stride = stride
+        starts = np.arange(0, available, stride)
         contexts = np.stack([series[:, s : s + self.context_length] for s in starts])
         targets = np.stack(
             [series[:, s + self.context_length : s + span] for s in starts]
@@ -530,6 +547,8 @@ class _GraphForecaster(Forecaster):
             "hidden_dim": self.hidden_dim,
             "epochs": self.epochs,
             "batch_size": self.batch_size,
+            "max_windows": self.max_windows,
+            "window_stride": self.window_stride,
             "learning_rate": self.learning_rate,
             "epochs_run": len(self._history),
             "best_validation_loss": (
