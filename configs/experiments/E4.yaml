@@ -51,9 +51,18 @@ methods:
   # The zero-shot side, whose accuracy must not move with the budget. If it does, the
   # budget is leaking into a method that was never supposed to be trained.
   - name: timesfm3_multivariate
-  # The trained side.
+  # The trained side. LightGBM fits the whole panel in 18 seconds, so the budget sweep
+  # costs almost nothing on top of the forecasting.
   - name: global_lightgbm
-  - name: dcrnn
+  # DCRNN is not here, for the same kind of measured reason SARIMA is absent from E1.
+  # It unrolls a recurrent cell over every step of its context for every window of a
+  # 40-epoch fit, and one run of this experiment did not finish in 43 minutes against
+  # roughly 6 for the rest of the method list. Eighteen runs of that is a day of compute
+  # to add a second trained baseline to an experiment that already has one.
+  #
+  # What may not be concluded: nothing here says how DCRNN would have scored. E4 asks
+  # how much local history a trained model needs before it beats a zero-shot one, and
+  # global_lightgbm answers that; DCRNN would have been corroboration, not the result.
 
 variants:
   - label: d001
