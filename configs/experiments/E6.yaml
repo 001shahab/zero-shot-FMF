@@ -37,13 +37,15 @@ protocol:
   horizons: [5, 15, 30, 60]
   stride: 60
   quantiles: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
-  # Deliberately uncapped, unlike E1-E5. max_origins keeps its origins evenly spaced
-  # across the test window, so a cap widens the effective stride: capping this site's
-  # 2298 hourly origins at 300 puts consecutive origins about eight hours apart. The
-  # risk heads below are the one place that depends on origins really being one stride
-  # apart -- a closed-gallery anomaly has to occupy consecutive origins that are all
-  # inside the same night, and at eight-hour spacing no such run exists. E6 is about an
-  # hour of compute uncapped, so the cap bought nothing here anyway.
+  # Capped higher than E1-E5, at 900 rather than 300, and the reason is the risk heads
+  # rather than statistical power. max_origins keeps its origins evenly spaced across
+  # the test window, so a cap widens the effective stride. sim_house_museum enumerates
+  # 2298 hourly origins; capped at 300 they land 460 steps apart, the longest run of
+  # consecutive shut origins is 3, and a 5-origin closed-gallery anomaly cannot be
+  # placed at all. At 900 they land 153 steps apart, the longest shut run is 7, and a
+  # 5-origin closure spans about thirteen hours -- a real overnight closure rather than
+  # an artefact of the spacing. sim_palazzo enumerates only 570, so it is unaffected.
+  max_origins: 900
 
 sensor_profile: realistic
 covariates: all
