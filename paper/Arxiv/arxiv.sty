@@ -1,0 +1,94 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% arxiv.sty
+%
+% A preprint style in the familiar arXiv layout: one wide column, a rule under
+% the title block, and a running header carrying the short title. Provides
+% \And and \AND so the author block can be written in the usual form with one
+% tabular per affiliation.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{arxiv}[2026/01/01 v1.1 arXiv preprint style]
+
+\RequirePackage{geometry}
+\RequirePackage{fancyhdr}
+\RequirePackage{graphicx}
+\RequirePackage{xcolor}
+
+% Margins are given rather than a text height, so that geometry sizes the body
+% around the running head and leaves a real bottom margin. Pinning textheight to
+% 9in on letterpaper consumes the footer and leaves the float placement algorithm
+% with no page it can ever fill, which deadlocks it rather than merely crowding.
+\geometry{
+  letterpaper,
+  left=1.0in,
+  right=1.0in,
+  top=1.0in,
+  bottom=1.0in,
+  headheight=14pt,
+  headsep=16pt,
+  footskip=24pt
+}
+
+% ---- running header ---------------------------------------------------------
+\providecommand{\headeright}{A Preprint}
+\providecommand{\undertitle}{A Preprint}
+\newcommand{\shorttitle}{}
+\newcommand{\settitlerunning}[1]{\renewcommand{\shorttitle}{#1}}
+
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancyhead[L]{\itshape\shorttitle}
+\fancyhead[R]{\itshape\headeright}
+\fancyfoot[C]{\thepage}
+
+% ---- author separators ------------------------------------------------------
+% These are installed at \begin{document} rather than here, because amsmath
+% defines \And for its own purposes and would otherwise overwrite ours if the
+% document loads it after this package. The author block needs the text-mode
+% meaning, so ours has to be the last word.
+\makeatletter
+\AtBeginDocument{%
+  \renewcommand{\And}{%
+    \end{tabular}\hskip 2em\begin{tabular}[t]{c}\ignorespaces
+  }%
+  \renewcommand{\AND}{%
+    \end{tabular}\\[2.5ex]\begin{tabular}[t]{c}\ignorespaces
+  }%
+}
+\providecommand{\And}{}
+\providecommand{\AND}{}
+
+% ---- title block ------------------------------------------------------------
+\renewcommand{\maketitle}{%
+  \thispagestyle{plain}
+  \begingroup
+  \centering
+  {\Large\bfseries\boldmath\@title\par}
+  \vskip 1.0em
+  {\normalsize
+    \begin{tabular}[t]{c}\ignorespaces\@author\end{tabular}\par}
+  \vskip 0.8em
+  {\small\@date\par}
+  \endgroup
+  \vskip 0.6em
+  \hrule height 0.4pt
+  \vskip 1.4em
+}
+\makeatother
+
+% ---- abstract ---------------------------------------------------------------
+\renewenvironment{abstract}{%
+  \vskip 0.2em
+  \centerline{\large\bfseries Abstract}
+  \vskip 0.5em
+  \begingroup
+  \leftskip=0.35in \rightskip=0.35in
+  \noindent\ignorespaces
+}{%
+  \par\endgroup
+  \vskip 1.0em
+}
+
+\endinput

@@ -1,0 +1,595 @@
+%=============================================================================
+% ref.bib
+% Bibliography for the related work section of the museum visitor flow paper.
+%
+% NOTE ON VERIFICATION
+% Entries marked with % VERIFY were assembled without retrieving the publisher
+% record. Titles, authors and years are believed correct, but volume, issue and
+% page numbers should be confirmed in Scopus, Crossref or the publisher site
+% before submission. Entries without the marker were checked against an online
+% source while this file was written.
+%=============================================================================
+
+%-----------------------------------------------------------------------------
+% Time series foundation models
+%-----------------------------------------------------------------------------
+
+@inproceedings{das2024timesfm,
+  author    = {Das, Abhimanyu and Kong, Weihao and Sen, Rajat and Zhou, Yichen},
+  title     = {A Decoder-Only Foundation Model for Time-Series Forecasting},
+  booktitle = {Proceedings of the 41st International Conference on Machine Learning (ICML)},
+  year      = {2024},
+  note      = {arXiv:2310.10688}
+}
+
+@misc{timesfm3,
+  author       = {Jain, Ayush and Sen, Rajat and Zhou, Yichen and Mol, Petros and Das, Abhimanyu and Oymak, Samet},
+  title        = {{TimesFM-3}: A Zero-Shot Foundation Model for Multivariate Forecasting},
+  howpublished = {Google Research Blog},
+  year         = {2026},
+  month        = {August},
+  url          = {https://research.google/blog/timesfm-3-a-zero-shot-foundation-model-for-multivariate-forecasting/},
+  note         = {Model weights: \url{https://huggingface.co/google/timesfm-3.0-pytorch}}
+}
+
+@article{ansari2024chronos,
+  author  = {Ansari, Abdul Fatir and Stella, Lorenzo and Turkmen, Caner and Zhang, Xiyuan and Mercado, Pedro and Shen, Huibin and Shchur, Oleksandr and Rangapuram, Syama Sundar and Pineda Arango, Sebastian and Kapoor, Shubham and Zschiegner, Jasper and Maddix, Danielle C. and Mahoney, Michael W. and Torkkola, Kari and Gordon Wilson, Andrew and Bohlke-Schneider, Michael and Wang, Yuyang},
+  title   = {Chronos: Learning the Language of Time Series},
+  journal = {Transactions on Machine Learning Research},
+  year    = {2024},
+  note    = {arXiv:2403.07815}
+}
+
+@misc{ansari2025chronos2,
+  author = {Ansari, Abdul Fatir and others},
+  title  = {{Chronos-2}: From Univariate to Universal Forecasting},
+  year   = {2025},
+  note   = {Technical report}
+} % VERIFY
+
+@misc{khwaja2026toto2,
+  author = {Khwaja, Emaad and Lettieri, Chris and Woo, Gerald and Belouadah, Eden and Cenac, Marc and Jarry, Guillaume and Paquin, Enguerrand and Zhao, Xunyi and Zhukov, Viktoriya and Abou-Amal, Othmane and Liu, Chenghao and Talwalkar, Ameet and Asker, David},
+  title  = {{Toto 2.0}: Time Series Forecasting Enters the Scaling Era},
+  year   = {2026},
+  eprint = {2605.20119},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG},
+  url    = {https://arxiv.org/abs/2605.20119}
+}
+
+@misc{auer2025tirex,
+  author = {Auer, Andreas and Podest, Patrick and Klotz, Daniel and B\"{o}ck, Sebastian and Klambauer, G\"{u}nter and Hochreiter, Sepp},
+  title  = {{TiRex}: Zero-Shot Forecasting Across Long and Short Horizons with Enhanced In-Context Learning},
+  year   = {2025},
+  eprint = {2505.23719},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG},
+  url    = {https://arxiv.org/abs/2505.23719}
+}
+
+@inproceedings{woo2024moirai,
+  author    = {Woo, Gerald and Liu, Chenghao and Kumar, Akshat and Xiong, Caiming and Savarese, Silvio and Sahoo, Doyen},
+  title     = {Unified Training of Universal Time Series Forecasting Transformers},
+  booktitle = {Proceedings of the 41st International Conference on Machine Learning (ICML)},
+  year      = {2024},
+  note      = {arXiv:2402.02592}
+}
+
+@inproceedings{goswami2024moment,
+  author    = {Goswami, Mononito and Szafer, Konrad and Choudhry, Arjun and Cai, Yifu and Li, Shuo and Dubrawski, Artur},
+  title     = {{MOMENT}: A Family of Open Time-Series Foundation Models},
+  booktitle = {Proceedings of the 41st International Conference on Machine Learning (ICML)},
+  year      = {2024},
+  note      = {arXiv:2402.03885}
+}
+
+@misc{rasul2023lagllama,
+  author = {Rasul, Kashif and Ashok, Arjun and Williams, Andrew Robert and Khorasani, Arian and Adamopoulos, George and Bhagwatkar, Rishika and Bilo\v{s}, Marin and Ghonia, Hena and Hassen, Nadhir Vincent and Schneider, Anderson and Garg, Sahil and Drouin, Alexandre and Chapados, Nicolas and Nevmyvaka, Yuriy and Rish, Irina},
+  title  = {{Lag-Llama}: Towards Foundation Models for Time Series Forecasting},
+  year   = {2023},
+  eprint = {2310.08278},
+  archivePrefix = {arXiv}
+} % VERIFY
+
+@misc{garza2023timegpt,
+  author = {Garza, Azul and Mergenthaler-Canseco, Max},
+  title  = {{TimeGPT-1}},
+  year   = {2023},
+  eprint = {2310.03589},
+  archivePrefix = {arXiv}
+} % VERIFY
+
+@misc{ekambaram2024ttm,
+  author = {Ekambaram, Vijay and Jati, Arindam and Nguyen, Nam H. and Dayama, Pankaj and Reddy, Chandra and Gifford, Wesley M. and Kalagnanam, Jayant},
+  title  = {Tiny Time Mixers ({TTMs}): Fast Pre-trained Models for Enhanced Zero/Few-Shot Forecasting of Multivariate Time Series},
+  year   = {2024},
+  eprint = {2401.03955},
+  archivePrefix = {arXiv}
+} % VERIFY
+
+@misc{aksu2024gifteval,
+  author = {Aksu, Taha and Woo, Gerald and Liu, Juncheng and Liu, Xu and Liu, Chenghao and Savarese, Silvio and Xiong, Caiming and Sahoo, Doyen},
+  title  = {{GIFT-Eval}: A Benchmark for General Time Series Forecasting Model Evaluation},
+  year   = {2024},
+  eprint = {2410.10393},
+  archivePrefix = {arXiv},
+  note   = {Leaderboard: \url{https://huggingface.co/spaces/Salesforce/GIFT-Eval}}
+} % VERIFY
+
+%-----------------------------------------------------------------------------
+% Spatio-temporal and graph-based flow forecasting
+%-----------------------------------------------------------------------------
+
+@inproceedings{li2018dcrnn,
+  author    = {Li, Yaguang and Yu, Rose and Shahabi, Cyrus and Liu, Yan},
+  title     = {Diffusion Convolutional Recurrent Neural Network: Data-Driven Traffic Forecasting},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year      = {2018},
+  note      = {arXiv:1707.01926}
+}
+
+@inproceedings{yu2018stgcn,
+  author    = {Yu, Bing and Yin, Haoteng and Zhu, Zhanxing},
+  title     = {Spatio-Temporal Graph Convolutional Networks: A Deep Learning Framework for Traffic Forecasting},
+  booktitle = {Proceedings of the 27th International Joint Conference on Artificial Intelligence (IJCAI)},
+  year      = {2018},
+  pages     = {3634--3640},
+  note      = {arXiv:1709.04875}
+}
+
+@inproceedings{wu2019graphwavenet,
+  author    = {Wu, Zonghan and Pan, Shirui and Long, Guodong and Jiang, Jing and Zhang, Chengqi},
+  title     = {Graph {WaveNet} for Deep Spatial-Temporal Graph Modeling},
+  booktitle = {Proceedings of the 28th International Joint Conference on Artificial Intelligence (IJCAI)},
+  year      = {2019},
+  pages     = {1907--1913},
+  note      = {arXiv:1906.00121}
+}
+
+@article{liu2022pvcgn,
+  author  = {Liu, Lingbo and Chen, Jingwen and Wu, Hefeng and Zhen, Jiajie and Li, Guanbin and Lin, Liang},
+  title   = {Physical-Virtual Collaboration Modeling for Intra- and Inter-Station Metro Ridership Prediction},
+  journal = {IEEE Transactions on Intelligent Transportation Systems},
+  year    = {2022},
+  volume  = {23},
+  number  = {4},
+  pages   = {3377--3391},
+  note    = {arXiv:2001.04889. Code and benchmarks: \url{https://github.com/HCPLab-SYSU/PVCGN}}
+} % VERIFY volume, number, pages
+
+@inproceedings{guo2019astgcn,
+  author    = {Guo, Shengnan and Lin, Youfang and Feng, Ning and Song, Chao and Wan, Huaiyu},
+  title     = {Attention Based Spatial-Temporal Graph Convolutional Networks for Traffic Flow Forecasting},
+  booktitle = {Proceedings of the AAAI Conference on Artificial Intelligence},
+  year      = {2019},
+  pages     = {922--929}
+} % VERIFY
+
+@inproceedings{zheng2020gman,
+  author    = {Zheng, Chuanpan and Fan, Xiaoliang and Wang, Cheng and Qi, Jianzhong},
+  title     = {{GMAN}: A Graph Multi-Attention Network for Traffic Prediction},
+  booktitle = {Proceedings of the AAAI Conference on Artificial Intelligence},
+  year      = {2020},
+  pages     = {1234--1241}
+} % VERIFY pages
+
+@inproceedings{shao2022stid,
+  author    = {Shao, Zezhi and Zhang, Zhao and Wang, Fei and Wei, Wei and Xu, Yongjun},
+  title     = {Spatial-Temporal Identity: A Simple yet Effective Baseline for Multivariate Time Series Forecasting},
+  booktitle = {Proceedings of the 31st ACM International Conference on Information and Knowledge Management (CIKM)},
+  year      = {2022}
+} % VERIFY
+
+%-----------------------------------------------------------------------------
+% Hierarchical forecasting and reconciliation
+%-----------------------------------------------------------------------------
+
+@article{hyndman2011optimal,
+  author  = {Hyndman, Rob J. and Ahmed, Roman A. and Athanasopoulos, George and Shang, Han Lin},
+  title   = {Optimal Combination Forecasts for Hierarchical Time Series},
+  journal = {Computational Statistics and Data Analysis},
+  year    = {2011},
+  volume  = {55},
+  number  = {9},
+  pages   = {2579--2589}
+}
+
+@article{wickramasuriya2019mint,
+  author  = {Wickramasuriya, Shanika L. and Athanasopoulos, George and Hyndman, Rob J.},
+  title   = {Optimal Forecast Reconciliation for Hierarchical and Grouped Time Series Through Trace Minimization},
+  journal = {Journal of the American Statistical Association},
+  year    = {2019},
+  volume  = {114},
+  number  = {526},
+  pages   = {804--819}
+}
+
+@article{wickramasuriya2020nonneg,
+  author  = {Wickramasuriya, Shanika L. and Turlach, Berwin A. and Hyndman, Rob J.},
+  title   = {Optimal Non-Negative Forecast Reconciliation},
+  journal = {Statistics and Computing},
+  year    = {2020},
+  volume  = {30},
+  pages   = {1167--1182}
+} % VERIFY
+
+@article{panagiotelis2021geometric,
+  author  = {Panagiotelis, Anastasios and Athanasopoulos, George and Gamakumara, Puwasala and Hyndman, Rob J.},
+  title   = {Forecast Reconciliation: A Geometric View with New Insights on Bias Correction},
+  journal = {International Journal of Forecasting},
+  year    = {2021},
+  volume  = {37},
+  number  = {1},
+  pages   = {343--359}
+} % VERIFY
+
+@inproceedings{rangapuram2021endtoend,
+  author    = {Rangapuram, Syama Sundar and Werner, Lucien D. and Benidis, Konstantinos and Mercado, Pedro and Gasthaus, Jan and Januschowski, Tim},
+  title     = {End-to-End Learning of Coherent Probabilistic Forecasts for Hierarchical Time Series},
+  booktitle = {Proceedings of the 38th International Conference on Machine Learning (ICML)},
+  year      = {2021}
+} % VERIFY
+
+@inproceedings{bentaieb2019regularized,
+  author    = {Ben Taieb, Souhaib and Koo, Bonsoo},
+  title     = {Regularized Regression for Hierarchical Forecasting Without Unbiasedness Conditions},
+  booktitle = {Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD)},
+  year      = {2019},
+  pages     = {1337--1347}
+} % VERIFY
+
+%-----------------------------------------------------------------------------
+% Museum visitor studies
+%-----------------------------------------------------------------------------
+
+@book{veron1983,
+  author    = {V\'{e}ron, Eliseo and Levasseur, Martine},
+  title     = {Ethnographie de l'exposition: l'espace, le corps et le sens},
+  publisher = {Biblioth\`{e}que publique d'information, Centre Georges Pompidou},
+  address   = {Paris},
+  year      = {1983}
+}
+
+@article{klein1993,
+  author  = {Klein, Hans-Joachim},
+  title   = {Tracking Visitor Circulation in Museum Settings},
+  journal = {Environment and Behavior},
+  year    = {1993},
+  volume  = {25},
+  number  = {6},
+  pages   = {782--800}
+} % VERIFY pages
+
+@article{bitgood2006,
+  author  = {Bitgood, Stephen},
+  title   = {An Analysis of Visitor Circulation: Movement Patterns and the General Value Principle},
+  journal = {Curator: The Museum Journal},
+  year    = {2006},
+  volume  = {49},
+  number  = {4},
+  pages   = {463--475}
+}
+
+@article{choi1999,
+  author  = {Choi, Yoon Kyung},
+  title   = {The Morphology of Exploration and Encounter in Museum Layouts},
+  journal = {Environment and Planning B: Planning and Design},
+  year    = {1999},
+  volume  = {26},
+  number  = {2},
+  pages   = {241--250}
+}
+
+@inproceedings{kanda2007,
+  author    = {Kanda, Takayuki and Shiomi, Masahiro and Perrin, Laurent and Nomura, Tatsuya and Ishiguro, Hiroshi and Hagita, Norihiro},
+  title     = {Analysis of People Trajectories with Ubiquitous Sensors in a Science Museum},
+  booktitle = {IEEE International Conference on Robotics and Automation (ICRA)},
+  year      = {2007},
+  pages     = {4846--4853}
+}
+
+@article{yoshimura2014louvre,
+  author  = {Yoshimura, Yuji and Sobolevsky, Stanislav and Ratti, Carlo and Girardin, Fabien and Carrascal, Juan Pablo and Blat, Josep and Sinatra, Roberta},
+  title   = {An Analysis of Visitors' Behavior in the {Louvre} Museum: A Study Using {Bluetooth} Data},
+  journal = {Environment and Planning B: Planning and Design},
+  year    = {2014},
+  volume  = {41},
+  number  = {6},
+  pages   = {1113--1131}
+}
+
+@article{yoshimura2019randomwalk,
+  author  = {Yoshimura, Yuji and Sinatra, Roberta and Krebs, Anne and Ratti, Carlo},
+  title   = {Analysis of Visitors' Mobility Patterns Through Random Walk in the {Louvre} Museum},
+  journal = {Journal of Ambient Intelligence and Humanized Computing},
+  year    = {2019}
+} % VERIFY volume and pages
+
+@article{centorrino2021museums,
+  author  = {Centorrino, Pierpaolo and Corbetta, Alessandro and Cristiani, Emiliano and Onofri, Elia},
+  title   = {Managing Crowded Museums: Visitors Flow Measurement, Analysis, Modeling, and Optimization},
+  journal = {Journal of Computational Science},
+  year    = {2021},
+  volume  = {53},
+  pages   = {101357},
+  note    = {arXiv:2006.16830}
+} % VERIFY volume and article number
+
+@article{uwbmuseum2026,
+  author  = {Author, To Be Confirmed},
+  title   = {Unleashing the Power of {UWB} for Indoor Mobility Analytics: A Museum Case Study},
+  journal = {Data Science and Engineering},
+  year    = {2026},
+  note    = {Dataset: \url{https://zenodo.org/records/14918763}}
+} % VERIFY authors, volume and pages before citing
+
+%-----------------------------------------------------------------------------
+% Occupancy sensing and datasets
+%-----------------------------------------------------------------------------
+
+@article{tekler2022robod,
+  author  = {Tekler, Zeynep Duygu and Ono, Eikichi and Peng, Yuzhen and Zhan, Sicheng and Lasternas, Bertrand and Chong, Adrian},
+  title   = {{ROBOD}, Room-Level Occupancy and Building Operation Dataset},
+  journal = {Building Simulation},
+  year    = {2022},
+  volume  = {15},
+  pages   = {2127--2137},
+  note    = {Data: \url{https://github.com/ideas-lab-nus/robod}}
+} % VERIFY volume and pages
+
+@article{schwee2019,
+  author  = {Schwee, Jens Hjort and Johansen, Aslak and J{\o}rgensen, Bo N{\o}rregaard and Kj{\ae}rgaard, Mikkel Baun and Mattera, Claudio Giovanni and Sangogboye, Fisayo Caleb and Veje, Christian},
+  title   = {Room-Level Occupant Counts and Environmental Quality from Heterogeneous Sensing Modalities in a Smart Building},
+  journal = {Scientific Data},
+  year    = {2019},
+  volume  = {6},
+  pages   = {287},
+  doi     = {10.1038/s41597-019-0274-4}
+}
+
+@article{candanedo2016,
+  author  = {Candanedo, Luis M. and Feldheim, V\'{e}ronique},
+  title   = {Accurate Occupancy Detection of an Office Room from Light, Temperature, Humidity and {CO2} Measurements Using Statistical Learning Models},
+  journal = {Energy and Buildings},
+  year    = {2016},
+  volume  = {112},
+  pages   = {28--39}
+} % VERIFY
+
+@article{chen2018review,
+  author  = {Chen, Zhenghua and Jiang, Chaoyang and Xie, Lihua},
+  title   = {Building Occupancy Estimation and Detection: A Review},
+  journal = {Energy and Buildings},
+  year    = {2018},
+  volume  = {169},
+  pages   = {260--270}
+} % VERIFY
+
+@article{brscic2013,
+  author  = {Br\v{s}\v{c}i\'{c}, Dra\v{z}en and Kanda, Takayuki and Ikeda, Tetsushi and Miyashita, Takahiro},
+  title   = {Person Position and Body Direction Tracking in Large Public Spaces Using {3D} Range Sensors},
+  journal = {IEEE Transactions on Human-Machine Systems},
+  year    = {2013},
+  volume  = {43},
+  number  = {6},
+  pages   = {522--534},
+  note    = {Dataset: \url{https://dil.atr.jp/crest2010_HRI/ATC_dataset/}}
+}
+
+%-----------------------------------------------------------------------------
+% Crowd dynamics and simulation
+%-----------------------------------------------------------------------------
+
+@article{helbing1995social,
+  author  = {Helbing, Dirk and Moln\'{a}r, P\'{e}ter},
+  title   = {Social Force Model for Pedestrian Dynamics},
+  journal = {Physical Review E},
+  year    = {1995},
+  volume  = {51},
+  number  = {5},
+  pages   = {4282--4286}
+}
+
+@article{helbing2007crowd,
+  author  = {Helbing, Dirk and Johansson, Anders and Al-Abideen, Habib Zein},
+  title   = {Dynamics of Crowd Disasters: An Empirical Study},
+  journal = {Physical Review E},
+  year    = {2007},
+  volume  = {75},
+  number  = {4},
+  pages   = {046109}
+}
+
+@article{seitz2012osm,
+  author  = {Seitz, Michael J. and K\"{o}ster, Gerta},
+  title   = {Natural Discretization of Pedestrian Movement in Continuous Space},
+  journal = {Physical Review E},
+  year    = {2012},
+  volume  = {86},
+  number  = {4},
+  pages   = {046108}
+}
+
+@article{kleinmeier2019vadere,
+  author  = {Kleinmeier, Benedikt and Z\"{o}nnchen, Benedikt and G\"{o}del, Marion and K\"{o}ster, Gerta},
+  title   = {{Vadere}: An Open-Source Simulation Framework to Promote Interdisciplinary Understanding},
+  journal = {Collective Dynamics},
+  year    = {2019},
+  volume  = {4},
+  pages   = {1--34}
+} % VERIFY pages
+
+@misc{jupedsim,
+  author       = {{JuPedSim Developers}},
+  title        = {{JuPedSim}: An Open Source Pedestrian Dynamics Simulator},
+  howpublished = {Forschungszentrum J\"{u}lich, Institute for Civil Safety Research},
+  year         = {2024},
+  url          = {https://github.com/PedestrianDynamics/jupedsim}
+}
+
+@book{fruin1971,
+  author    = {Fruin, John J.},
+  title     = {Pedestrian Planning and Design},
+  publisher = {Metropolitan Association of Urban Designers and Environmental Planners},
+  address   = {New York},
+  year      = {1971}
+}
+
+%-----------------------------------------------------------------------------
+% Conservation of cultural heritage
+%-----------------------------------------------------------------------------
+
+@book{camuffo2019,
+  author    = {Camuffo, Dario},
+  title     = {Microclimate for Cultural Heritage: Measurement, Risk Assessment, Conservation, Restoration, and Maintenance of Indoor and Outdoor Monuments},
+  publisher = {Elsevier},
+  edition   = {3rd},
+  year      = {2019}
+} % VERIFY edition and year
+
+@misc{en15757,
+  author       = {{European Committee for Standardization}},
+  title        = {{EN 15757}: Conservation of Cultural Property. Specifications for Temperature and Relative Humidity to Limit Climate-Induced Mechanical Damage in Organic Hygroscopic Materials},
+  howpublished = {CEN, Brussels},
+  year         = {2010}
+} % VERIFY current version, the standard has been under revision
+
+%-----------------------------------------------------------------------------
+% Uncertainty, conformal prediction and anomaly detection
+%-----------------------------------------------------------------------------
+
+@inproceedings{stankeviciute2021conformal,
+  author    = {Stankevi\v{c}i\=ut\.{e}, Kamil\.{e} and Alaa, Ahmed M. and van der Schaar, Mihaela},
+  title     = {Conformal Time-Series Forecasting},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year      = {2021}
+}
+
+@inproceedings{xu2021enbpi,
+  author    = {Xu, Chen and Xie, Yao},
+  title     = {Conformal Prediction Interval for Dynamic Time-Series},
+  booktitle = {Proceedings of the 38th International Conference on Machine Learning (ICML)},
+  year      = {2021}
+}
+
+@inproceedings{gibbs2021adaptive,
+  author    = {Gibbs, Isaac and Cand\`{e}s, Emmanuel},
+  title     = {Adaptive Conformal Inference Under Distribution Shift},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year      = {2021}
+}
+
+@article{blazquez2021review,
+  author  = {Bl\'{a}zquez-Garc\'{i}a, Ane and Conde, Angel and Mori, Usue and Lozano, Jose A.},
+  title   = {A Review on Outlier/Anomaly Detection in Time Series Data},
+  journal = {ACM Computing Surveys},
+  year    = {2021},
+  volume  = {54},
+  number  = {3},
+  pages   = {1--33}
+} % VERIFY
+
+%-----------------------------------------------------------------------------
+% Regulation
+%-----------------------------------------------------------------------------
+
+@misc{gdpr,
+  author       = {{European Parliament and Council of the European Union}},
+  title        = {Regulation ({EU}) 2016/679 on the Protection of Natural Persons with Regard to the Processing of Personal Data and on the Free Movement of Such Data (General Data Protection Regulation)},
+  howpublished = {Official Journal of the European Union, L 119},
+  year         = {2016}
+}
+
+%=============================================================================
+% Added for the present paper: statistical machinery, solvers, and two
+% behavioural sources used to parameterise the simulator.
+%=============================================================================
+
+@article{diebold1995,
+  author  = {Diebold, Francis X. and Mariano, Roberto S.},
+  title   = {Comparing Predictive Accuracy},
+  journal = {Journal of Business \& Economic Statistics},
+  volume  = {13},
+  number  = {3},
+  pages   = {253--263},
+  year    = {1995},
+  doi     = {10.1080/07350015.1995.10524599}
+}
+
+@article{harvey1997,
+  author  = {Harvey, David and Leybourne, Stephen and Newbold, Paul},
+  title   = {Testing the Equality of Prediction Mean Squared Errors},
+  journal = {International Journal of Forecasting},
+  volume  = {13},
+  number  = {2},
+  pages   = {281--291},
+  year    = {1997},
+  doi     = {10.1016/S0169-2070(96)00719-4}
+}
+
+@article{newey1987,
+  author  = {Newey, Whitney K. and West, Kenneth D.},
+  title   = {A Simple, Positive Semi-Definite, Heteroskedasticity and
+             Autocorrelation Consistent Covariance Matrix},
+  journal = {Econometrica},
+  volume  = {55},
+  number  = {3},
+  pages   = {703--708},
+  year    = {1987},
+  doi     = {10.2307/1913610}
+}
+
+@article{holm1979,
+  author  = {Holm, Sture},
+  title   = {A Simple Sequentially Rejective Multiple Test Procedure},
+  journal = {Scandinavian Journal of Statistics},
+  volume  = {6},
+  number  = {2},
+  pages   = {65--70},
+  year    = {1979}
+}
+
+@article{osqp,
+  author  = {Stellato, Bartolomeo and Banjac, Goran and Goulart, Paul and
+             Bemporad, Alberto and Boyd, Stephen},
+  title   = {{OSQP}: An Operator Splitting Solver for Quadratic Programs},
+  journal = {Mathematical Programming Computation},
+  volume  = {12},
+  number  = {4},
+  pages   = {637--672},
+  year    = {2020},
+  doi     = {10.1007/s12532-020-00179-2}
+}
+
+@article{cvxpy,
+  author  = {Diamond, Steven and Boyd, Stephen},
+  title   = {{CVXPY}: A Python-Embedded Modeling Language for Convex
+             Optimization},
+  journal = {Journal of Machine Learning Research},
+  volume  = {17},
+  number  = {83},
+  pages   = {1--5},
+  year    = {2016}
+}
+
+@article{alduchov1996,
+  author  = {Alduchov, Oleg A. and Eskridge, Robert E.},
+  title   = {Improved Magnus Form Approximation of Saturation Vapor Pressure},
+  journal = {Journal of Applied Meteorology},
+  volume  = {35},
+  number  = {4},
+  pages   = {601--609},
+  year    = {1996},
+  doi     = {10.1175/1520-0450(1996)035<0601:IMFAOS>2.0.CO;2}
+}
+
+@article{zancanaro2007,
+  author  = {Zancanaro, Massimo and Kuflik, Tsvi and Boger, Zvi and
+             Goren-Bar, Dina and Goldwasser, Dan},
+  title   = {Analyzing Museum Visitors' Behavior Patterns},
+  journal = {Lecture Notes in Computer Science},
+  volume  = {4511},
+  pages   = {238--246},
+  year    = {2007},
+  doi     = {10.1007/978-3-540-73078-1_27}
+}

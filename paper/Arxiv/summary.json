@@ -1,0 +1,89 @@
+{
+  "reconciliation": {
+    "mint": {
+      "crps_after": 0.2754581144,
+      "crps_before": 0.2722657435,
+      "mae_after": 0.3556410112,
+      "mae_before": 0.3537793703,
+      "n": 600,
+      "residual_after": 3e-10,
+      "residual_before": 1.049419155,
+      "solve_time_ms": 0.0,
+      "violation_after": 1.737708815
+    },
+    "none": {
+      "crps_after": 0.2722657435,
+      "crps_before": 0.2722657435,
+      "mae_after": 0.3537793703,
+      "mae_before": 0.3537793703,
+      "n": 600,
+      "residual_after": 1.049419155,
+      "residual_before": 1.049419155,
+      "solve_time_ms": 0.0,
+      "violation_after": 0.005579319
+    },
+    "proposed": {
+      "crps_after": 0.2729261181,
+      "crps_before": 0.2722657435,
+      "mae_after": 0.3510910212,
+      "mae_before": 0.3537793703,
+      "n": 600,
+      "residual_after": 4.1e-09,
+      "residual_before": 1.049419155,
+      "solve_time_ms": 10.156041,
+      "violation_after": 0.0
+    },
+    "uniform_weight": {
+      "crps_after": 0.2752143135,
+      "crps_before": 0.2722657435,
+      "mae_after": 0.3547618394,
+      "mae_before": 0.3537793703,
+      "n": 600,
+      "residual_after": 7e-10,
+      "residual_before": 1.049419155,
+      "solve_time_ms": 6.21402,
+      "violation_after": 0.0
+    }
+  },
+  "reconciliation_significance": {
+    "mint": {
+      "mean_change_percent": 0.5262152362774755,
+      "n_pairs": 600,
+      "p_value": 2.236184233898984e-47
+    },
+    "proposed": {
+      "mean_change_percent": -0.7598942373543399,
+      "n_pairs": 600,
+      "p_value": 0.012066079497012936
+    },
+    "proposed_vs_uniform": {
+      "mean_change_percent": -1.0347274788270466,
+      "n_pairs": 600,
+      "p_value": 8.51650773491204e-34
+    },
+    "uniform_weight": {
+      "mean_change_percent": 0.27770674952057417,
+      "n_pairs": 600,
+      "p_value": 1.5853788535250416e-29
+    }
+  },
+  "seasonal_strength": {
+    "HZMetro": [
+      0.7893608369732317,
+      0.0038508055629374637
+    ],
+    "ROBOD": [
+      0.43983140899988193,
+      0.11988332644682546
+    ],
+    "Simulated": [
+      0.5496699169879979,
+      0.057167871467424365
+    ]
+  },
+  "zero_shot_gain_percent": {
+    "HZMetro": -33.455020354738465,
+    "ROBOD": 14.980027748998658,
+    "Simulated": -4.04911864137516
+  }
+}

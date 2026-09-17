@@ -40,5 +40,16 @@ htmlcov/
 # Report artefacts are derived: `mflow report` rebuilds them from results/, and results/
 # is itself rebuilt from the run manifests. Committing a table would put a number in the
 # repository whose provenance is a file that is not here.
-/paper/
+# The contents rather than the directory itself, because git cannot re-include anything
+# beneath an excluded directory and the manuscript below has to be re-included.
+/paper/*
+# The manuscript source is not an artefact, so it is tracked. Its figures and tables are
+# generated, but they are the paper's evidence and have to travel with the submission;
+# paper/Arxiv/analysis.py regenerates every one of them from results/.
+!/paper/Arxiv/
+/paper/Arxiv/*.aux
+/paper/Arxiv/*.bbl
+/paper/Arxiv/*.blg
+/paper/Arxiv/*.log
+/paper/Arxiv/*.out
 logs/
