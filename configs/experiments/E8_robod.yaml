@@ -55,7 +55,12 @@ question: >-
 sites:
   - robod_bldg1
 
-seeds: [0, 1, 2]
+# Two seeds, not three. Every forecaster here is deterministic, which E7 established by
+# comparing its three seeds and finding the forecasts bit-identical. Seeds are therefore
+# not replicates: pooling them inflates the sample without adding information and
+# understates every p-value. Two are kept only so the determinism check still has
+# something to compare, and inference runs on one.
+seeds: [0, 1]
 
 protocol:
   # ROBOD is sampled at 300 s, so these are the spec's horizons exactly: 5, 15, 30 and 60
