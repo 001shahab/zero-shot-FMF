@@ -50,6 +50,7 @@ def measure(device: str = "cpu") -> Iterator[ResourceUsage]:
     """
     usage = ResourceUsage(device=device)
     torch_cuda = None
+    torch_mps = None
     if device == "cuda":
         import torch
 
@@ -57,11 +58,21 @@ def measure(device: str = "cpu") -> Iterator[ResourceUsage]:
             torch_cuda = torch.cuda
             torch_cuda.synchronize()
             torch_cuda.reset_peak_memory_stats()
+    elif device == "mps":
+        # Apple Silicon keeps tensors in the MPS allocator, which tracemalloc cannot see.
+        # Reading the heap here and calling the result a transformer's memory footprint
+        # understates it by orders of magnitude, so the allocator is queried directly.
+        import torch
+
+        if torch.backends.mps.is_available():
+            torch_mps = torch.mps
+            torch_mps.synchronize()
 
     started_tracing = not tracemalloc.is_tracing()
     if started_tracing:
         tracemalloc.start()
     baseline = tracemalloc.get_traced_memory()[1]
+    mps_baseline = torch_mps.current_allocated_memory() if torch_mps is not None else 0
 
     start = time.perf_counter()
     try:
@@ -69,11 +80,21 @@ def measure(device: str = "cpu") -> Iterator[ResourceUsage]:
     finally:
         if torch_cuda is not None:
             torch_cuda.synchronize()
+        if torch_mps is not None:
+            torch_mps.synchronize()
         usage.latency_ms = (time.perf_counter() - start) * 1000.0
         heap_peak = tracemalloc.get_traced_memory()[1]
         if started_tracing:
             tracemalloc.stop()
         if torch_cuda is not None:
             usage.peak_memory_mb = torch_cuda.max_memory_allocated() / 1024**2
+        elif torch_mps is not None:
+            # The MPS allocator exposes the live total rather than a high-water mark, so
+            # this is the memory still held at the end of the call, not its peak. It is
+            # reported as a driver-level figure and labelled as such rather than being
+            # passed off as a peak.
+            usage.peak_memory_mb = (
+                max(0, torch_mps.driver_allocated_memory() - mps_baseline) / 1024**2
+            )
         else:
             usage.peak_memory_mb = max(0.0, heap_peak - baseline) / 1024**2

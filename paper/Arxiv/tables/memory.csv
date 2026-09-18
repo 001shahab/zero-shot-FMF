@@ -1,0 +1,9 @@
+method,peak_rss_mb,weights_mb,forward_pass_mb
+timesfm3_univariate,2813.3,0.0,2712.9
+timesfm3_multivariate,2812.7,0.0,2712.1
+chronos2_multivariate,1061.7,0.0,961.2
+toto2,2987.0,0.0,2886.5
+global_lightgbm,209.8,108.7,0.6
+historical_average,100.5,0.0,0.0
+seasonal_naive,100.5,0.0,0.0
+last_value,100.6,0.0,0.0

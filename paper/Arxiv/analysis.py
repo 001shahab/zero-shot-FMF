@@ -35,10 +35,10 @@ from typing import Any
 import matplotlib
 
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt  # noqa: E402
-import numpy as np  # noqa: E402
-import pandas as pd  # noqa: E402
-from scipy import stats  # noqa: E402
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from scipy import stats
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
@@ -47,7 +47,7 @@ FIGURES = Path(__file__).resolve().parent / "figures"
 TABLES = Path(__file__).resolve().parent / "tables"
 
 QUANTILES: tuple[float, ...] = (0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9)
-QCOLS = [f"q{int(round(q * 100))}" for q in QUANTILES]
+QCOLS = [f"q{round(q * 100)}" for q in QUANTILES]
 NORMAL_80_SPREAD = 2.5631
 
 # Which experiment supplies the real-data results. E7 used a one-season context, which
@@ -186,25 +186,30 @@ def runs_for(experiment: str) -> list[Path]:
     return found
 
 
-def assert_seeds_are_replicates(experiment: str) -> bool:
-    """Check whether the seeds of an experiment produced identical forecasts.
+def assert_seeds_are_replicates(experiment: str) -> dict[str, bool]:
+    """Report, per method, whether the seeds produced bit-identical forecasts.
 
-    If they did, they are not independent replicates and must not be pooled for
-    inference. Returns True when the forecasts agree to the bit.
+    A method whose seeds agree to the bit has not been replicated by running it again:
+    pooling those origins multiplies the sample size without adding information and
+    understates every p-value computed from it. This is checked rather than assumed,
+    because which methods are stochastic is a property of the implementations and not
+    something to be recalled.
     """
     directories = [d for d in runs_for(experiment) if (d / "predictions.parquet").is_file()]
     if len(directories) < 2:
-        return False
+        raise AnalysisError(f"{experiment} has fewer than two seeds to compare")
     key = ["method", "origin", "series_id", "step"]
     first = pd.read_parquet(directories[0] / "predictions.parquet")
+    spread: dict[str, float] = {}
     for other in directories[1:]:
         second = pd.read_parquet(other / "predictions.parquet")
         merged = first.merge(second, on=key, suffixes=("_a", "_b"))
         if merged.empty:
-            return False
-        if float((merged["q50_a"] - merged["q50_b"]).abs().max()) != 0.0:
-            return False
-    return True
+            raise AnalysisError(f"{experiment} seeds share no common origins")
+        gap = (merged["q50_a"] - merged["q50_b"]).abs().groupby(merged["method"]).max()
+        for method, value in gap.items():
+            spread[str(method)] = max(spread.get(str(method), 0.0), float(value))
+    return {base_method(m): v == 0.0 for m, v in sorted(spread.items())}
 
 
 def metrics_for(experiment: str, *, distinct: bool = True) -> pd.DataFrame:
@@ -266,7 +271,7 @@ def per_series_strength(site_id: str, prefix: str) -> pd.Series:
 
     site = load_site(ROOT / "data" / "canonical" / site_id)
     panel = site.to_panel()
-    period = int(round(24 * 3600 / site.meta.interval_seconds))
+    period = round(24 * 3600 / site.meta.interval_seconds)
     values = {
         sid: seasonal_strength(panel.series[i], period)
         for i, sid in enumerate(panel.series_ids)
@@ -318,7 +323,7 @@ def within_dataset_regression(
         "experiment": experiment,
         "zero_shot": zero_shot,
         "baseline": baseline,
-        "n_series": int(len(frame)),
+        "n_series": len(frame),
         "slope": float(fit.slope),
         "slope_se": float(fit.stderr),
         "slope_ci_low": float(fit.slope - 1.96 * fit.stderr),
@@ -779,16 +784,17 @@ def main() -> int:
     TABLES.mkdir(parents=True, exist_ok=True)
     summary: dict[str, Any] = {}
 
-    print("checking whether seeds are independent replicates")
+    print("checking, per method, whether seeds are independent replicates")
     determinism = {
         name: assert_seeds_are_replicates(experiment)
         for name, experiment in REAL.items()
     }
     summary["seeds_are_bit_identical"] = determinism
-    for name, identical in determinism.items():
-        print(f"  {name:8s} identical across seeds: {identical}")
-    if not all(determinism.values()):
-        print("  at least one experiment has genuinely stochastic seeds; pooling is valid")
+    for name, per_method in determinism.items():
+        identical = [m for m, same in per_method.items() if same]
+        varying = [m for m, same in per_method.items() if not same]
+        print(f"  {name:8s} bit-identical across seeds: {', '.join(identical)}")
+        print(f"  {name:8s} genuinely stochastic:      {', '.join(varying) or 'none'}")
 
     print("\nfigures: skill by horizon")
     robod = figure_skill_by_horizon(
