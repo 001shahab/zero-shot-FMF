@@ -1,0 +1,58 @@
+# E12 -- reconciliation where the capacity constraint is actually active.
+#
+# Review point. On the baseline simulated museum the raw forecast violated the occupancy
+# bounds by 0.006 persons per origin, so the inequality constraints were nearly inactive
+# and the separation from MinT, which has no representation of them, was being measured
+# in a regime with almost nothing to separate. The referee asked for a crowded scenario
+# in which capacity binds. configs/sites/house_museum_crowded.yaml is that scenario: the
+# same building, the same capacities and the same doorway throughputs, with demand raised
+# so that the entrance hall sits at capacity 20.5 percent of the time against 1.4 percent
+# before, and the parlour 28.4 percent against 12.1 percent.
+#
+# Everything else matches the baseline reconciliation run, so the two are comparable: the
+# same context, the same horizon ladder, the same origin budget and the same two
+# forecasters. The reconcilers are applied offline from the stored quantile forecasts,
+# which is exact rather than approximate, so this experiment only has to produce
+# forecasts.
+#
+# The prediction this experiment can falsify is specific. If the box is what distinguishes
+# the proposed projection from MinT, then moving to an operating point where the box binds
+# must widen the gap: MinT's bound violation should rise and its accuracy should degrade
+# relative to a projection that respects the bounds. If the gap does not widen, the box is
+# not doing the work the paper attributes to it.
+
+id: E12_crowded
+question: >-
+  Does the advantage of the bounded projection over minimum trace reconciliation widen at
+  an operating point where the capacity constraint is frequently active?
+
+sites:
+  - sim_house_museum_crowded
+
+seeds: [0]
+
+protocol:
+  context_length: 1440
+  horizons: [5, 15, 30, 60]
+  stride: 60
+  quantiles: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+  max_origins: 300
+
+sensor_profile: clean
+covariates: all
+reconcilers: [none]
+
+methods:
+  - name: timesfm3_multivariate
+  - name: global_lightgbm
+
+notes:
+  reconciliation_source: >-
+    The reconcilers are applied offline from predictions.parquet by
+    paper/.../analysis.py, exactly as for the baseline site.
+  comparison: E11_efficiency_sim d090
+  caveat: >-
+    This is still simulation. It establishes that the box matters more when the box
+    binds, which is a statement about the geometry of the problem. It is not evidence
+    about a real building, and no real dataset in this project measures occupancy and
+    doorway flow simultaneously.

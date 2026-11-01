@@ -1,0 +1,80 @@
+# E11 -- data efficiency on the simulated museum. Supersedes E4.
+#
+# E4 is kept in the repository as a logged run, but its data-efficiency curve is not
+# usable and this experiment replaces it. The defect was in how the training budget
+# interacted with imputation, and it was found while answering a referee who asked
+# whether the data-scarcity explanation for LightGBM's performance had been isolated from
+# the treatment of missing observations. It had not been.
+#
+# The budget mechanism marks every step before the budget as missing and leaves the plan
+# untouched, which is the right design. But fill_context back-fills a leading gap with
+# the first observed value, so a one-day budget handed the booster a training set in
+# which most rows had a flat synthetic history and a target equal to that same constant.
+# The model was therefore trained largely on the imputation rather than starved of data,
+# which both flattered the small budgets and taught the model to predict a flat line.
+#
+# GlobalLightGBM now starts its training origins after the first genuine observation, so
+# a budget of n days produces training rows drawn from n days. The curve this experiment
+# produces is the one the paper reports, and it is not comparable to E4's.
+#
+# This experiment also supplies the stored quantile forecasts that the reconciliation
+# study reads, because the simulated museum is the only site reporting both sides of the
+# continuity equation.
+
+id: E11_efficiency_sim
+question: >-
+  At what quantity of local training history does a site-trained model overtake a
+  zero-shot foundation model, once the training budget is not padded by imputation?
+
+sites:
+  - sim_house_museum
+
+seeds: [0, 1]
+
+protocol:
+  context_length: 1440
+  horizons: [5, 15, 30, 60]
+  stride: 60
+  quantiles: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+  max_origins: 300
+
+sensor_profile: clean
+covariates: all
+reconcilers: [none]
+
+methods:
+  # The zero-shot side, whose accuracy must not move with the budget. If it does, the
+  # budget has leaked into a method that was never trained.
+  - name: timesfm3_multivariate
+  # The trained side, horizon-matched and given the site's daily lag. At one minute
+  # resolution the daily lag is 1440 steps, which a one-day budget cannot supply, so the
+  # lag set stays at the default and the daily cycle is carried by calendar features.
+  # This is stated rather than silently assumed: the budget sweep is about quantity of
+  # history, and changing the lag set with the budget would confound the two.
+  - name: global_lightgbm
+
+variants:
+  - label: d001
+    train_days: 1
+  - label: d003
+    train_days: 3
+  - label: d007
+    train_days: 7
+  - label: d014
+    train_days: 14
+  - label: d030
+    train_days: 30
+  - label: d090
+    train_days: 90
+
+notes:
+  zero_shot_method: timesfm3_multivariate+none
+  trained_method: global_lightgbm+none
+  supersedes: E4
+  invariant: >-
+    timesfm3_multivariate must score identically across all six budgets. A difference
+    means the training budget reached a method that does not train.
+  reconciliation_source: >-
+    The d090 variant supplies the stored quantile forecasts for the reconciliation study,
+    which is computed offline because the projection is a function of the forecast, the
+    graph and the anchor alone.

@@ -1,0 +1,79 @@
+# E11 -- training-data sensitivity on real room occupancy.
+#
+# Review point. The submitted paper explained LightGBM's weakness on ROBOD by the
+# shortness of the usable record, and a referee correctly objected that this explanation
+# was asserted rather than isolated: the same result could come from feature selection,
+# from tuning, from the global training strategy or from how missing observations are
+# treated. E10 addresses the first three by re-specifying the model. This experiment
+# addresses the quantity of data directly, by giving the same re-specified model a
+# controlled budget of ROBOD's own history and reading off the curve.
+#
+# The arms are the horizon-matched, daily-lagged configuration of E10 arm 3. The weekly
+# lag is excluded here because a 2016 step warm-up cannot be formed from a three-day
+# budget, and changing the lag set with the budget would confound quantity with
+# specification. The budget is therefore the only thing that varies.
+#
+# What this can and cannot settle. If accuracy rises steeply with the budget and has not
+# flattened by the largest budget, scarcity is a live explanation. If it is flat, it is
+# not, and the honest reading is that the model is mis-specified for this target rather
+# than starved. Either outcome is reportable and the paper reports whichever occurs.
+
+id: E11_efficiency_robod
+question: >-
+  How much of LightGBM's weakness on real room occupancy is explained by the quantity of
+  local training history, holding the model specification fixed?
+
+sites:
+  - robod_bldg1
+
+seeds: [0]
+
+protocol:
+  context_length: 576
+  horizons: [1, 3, 6, 12]
+  stride: 12
+  quantiles: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+  mase_season: null
+  require_observed: true
+
+sensor_profile: clean
+covariates: all
+reconcilers: [none]
+
+methods:
+  # The zero-shot reference, which must not move with the budget.
+  - name: toto2
+  # The trivial reference, which also must not move.
+  - name: last_value
+  # The trained arm under test.
+  - name: global_lightgbm
+    params:
+      max_horizon: 12
+      train_steps: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+      lags: [1, 2, 3, 5, 10, 15, 30, 60, 120, 287, 288, 289, 576]
+
+variants:
+  # Three days is the smallest budget that can form a training row at all once the
+  # 289 step daily lag is warmed up: 864 steps of history against 289 of warm-up and
+  # twelve of horizon.
+  - label: d003
+    train_days: 3
+  - label: d007
+    train_days: 7
+  - label: d014
+    train_days: 14
+  - label: d030
+    train_days: 30
+  - label: d060
+    train_days: 60
+
+notes:
+  zero_shot_method: toto2+none
+  trained_method: global_lightgbm+none
+  invariant: >-
+    toto2 and last_value must score identically across all five budgets.
+  caveat: >-
+    A calendar budget on ROBOD is not a budget of observations. The record was collected
+    in weekday blocks and carries a two-month vacation hole, so n days of calendar
+    history contains fewer than n days of data, and the analysis script reports the
+    number of finite observations inside each budget alongside the calendar label.

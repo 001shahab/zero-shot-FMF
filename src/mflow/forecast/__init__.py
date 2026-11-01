@@ -108,6 +108,7 @@ def _factories() -> dict[str, Callable[..., Forecaster]]:
         "seasonal_naive": trivial.SeasonalNaive,
         "historical_average": trivial.HistoricalAverage,
         "global_lightgbm": classical.GlobalLightGBM,
+        "per_series_lightgbm": classical.PerSeriesLightGBM,
         "sarima": classical.SARIMA,
         "ets": classical.ETS,
         "timesfm3_univariate": timesfm3_univariate,

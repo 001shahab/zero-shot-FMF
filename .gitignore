@@ -47,9 +47,14 @@ htmlcov/
 # generated, but they are the paper's evidence and have to travel with the submission;
 # paper/Arxiv/analysis.py regenerates every one of them from results/.
 !/paper/Arxiv/
-/paper/Arxiv/*.aux
-/paper/Arxiv/*.bbl
-/paper/Arxiv/*.blg
-/paper/Arxiv/*.log
-/paper/Arxiv/*.out
+!/paper/Topology_Constrained_Reconciliation_for_Zero_Shot_Forecastingof_Occupancy_and_Flow/
+# LaTeX build products, in whichever manuscript directory produces them.
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.synctex.gz
+*.fdb_latexmk
+*.fls
 logs/

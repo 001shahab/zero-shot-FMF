@@ -1,0 +1,85 @@
+# E10 -- the ROBOD half of the gradient-boosted re-specification. See
+# configs/experiments/E10_lightgbm_hzmetro.yaml for the full rationale.
+#
+# ROBOD is 108 days at five minute resolution, so unlike HZMetro it can afford a weekly
+# lag: 2016 steps of warm-up against a training window of about 25900 steps. An office
+# building has a strong weekday cycle, so this is the site where the weekly lag should
+# help the booster most, and it is the site where a referee's concern that the local
+# baselines were starved of weekly structure can actually be tested.
+#
+# Arm 1 reproduces E8_robod's LightGBM exactly. Each later arm adds one factor.
+
+id: E10_lightgbm_robod
+question: >-
+  Does the zero-shot advantage on real room occupancy survive a gradient-boosted
+  competitor given daily and weekly lags, a horizon-matched training grid, a tuned
+  configuration and a per-series fit?
+
+sites:
+  - robod_bldg1
+
+seeds: [0]
+
+protocol:
+  context_length: 576
+  horizons: [1, 3, 6, 12]
+  stride: 12
+  quantiles: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+  mase_season: null
+  require_observed: true
+
+sensor_profile: clean
+covariates: all
+reconcilers: [none]
+
+methods:
+  - name: last_value
+  - name: seasonal_naive
+  - name: toto2
+
+  # Arm 1: exactly what the submitted paper ran.
+  - name: global_lightgbm
+    label: lightgbm_as_submitted
+
+  # Arm 2: trained at the steps it is scored at. The submitted ladder clipped to a
+  # twelve-step horizon is {1, 5, 12}, so nine of the twelve steps were extrapolations.
+  - name: global_lightgbm
+    label: lightgbm_horizon_matched
+    params:
+      max_horizon: 12
+      train_steps: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+
+  # Arm 3: adds daily and weekly lags, from seasonal_lags(300, weekly=True).
+  - name: global_lightgbm
+    label: lightgbm_seasonal_lags
+    params:
+      max_horizon: 12
+      train_steps: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+      lags: [1, 2, 3, 5, 10, 15, 30, 60, 120, 287, 288, 289, 576, 2015, 2016, 2017]
+
+  # Arm 4: adds the hyperparameter search.
+  - name: global_lightgbm
+    label: lightgbm_tuned
+    params:
+      max_horizon: 12
+      train_steps: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+      lags: [1, 2, 3, 5, 10, 15, 30, 60, 120, 287, 288, 289, 576, 2015, 2016, 2017]
+      tune: true
+
+  # Arm 5: one independent booster set per room.
+  - name: per_series_lightgbm
+    label: lightgbm_per_series
+    params:
+      max_horizon: 12
+      train_steps: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+      lags: [1, 2, 3, 5, 10, 15, 30, 60, 120, 287, 288, 289, 576, 2015, 2016, 2017]
+
+notes:
+  reference_method: last_value+none
+  training_window: >-
+    The train and validation splits together are 24883 of 31104 steps, about 86 days at
+    five minute resolution. ROBOD was collected in weekday blocks with a two-month
+    vacation hole, so the calendar span overstates the observed content; the number of
+    finite observations inside the window is reported by the analysis script.
+  caveat: >-
+    One seed, for the reason given in the HZMetro half.

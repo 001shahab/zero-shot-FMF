@@ -1,0 +1,112 @@
+# E10 -- is the gradient-boosted comparison lost on a handicapped configuration?
+#
+# Review point. A referee observed that a single globally trained LightGBM is not enough
+# to establish that a frozen foundation model beats a well-specified local model, and
+# asked for the training window, the lag selection, the tuning procedure and the forecast
+# strategy. Reading our own code rather than recalling it, two of those were genuinely
+# unfavourable to the trained arm, and neither was a deliberate choice:
+#
+# 1. DEFAULT_LAGS is stated in steps, not in time. On a site sampled every fifteen
+#    minutes its longest lag reaches thirty hours and the set contains no daily lag at
+#    all, so the booster had to infer the daily cycle from calendar features while the
+#    seasonal baseline it is compared against was handed yesterday's value directly.
+#
+# 2. The training step grid is a ladder chosen for a sixty-step horizon, {1, 5, 15, 30,
+#    60}. Clipped to this experiment's eight-step horizon it becomes {1, 5, 8}, so the
+#    model was trained at three of the eight steps it is scored on and extrapolated in
+#    its own horizon feature at the other five.
+#
+# This experiment removes both, then tunes, then removes the global pooling, one factor
+# at a time, so the table says which factor mattered. The arms share every origin with
+# E8_hzmetro by construction: same site, same context, same stride, same horizons.
+#
+# The forecast strategy is direct multi-horizon in every arm. The step index is a
+# feature and the whole horizon is produced in one pass, so there is no recursion and no
+# error accumulation. That was already true of the submitted result and the referee's
+# question about "direct multi or multi recursive" is answered by the code.
+#
+# Weekly lags are deliberately absent here. HZMetro is a 25 day record, of which the
+# training window is about 15 days; a 672 step lag would consume half of it as warm-up
+# before a single training row could be formed. The weekly cycle is instead tested on
+# ROBOD, which is 108 days, and through the weekly seasonal baseline at the long end of
+# the E9 context sweep.
+
+id: E10_lightgbm_hzmetro
+question: >-
+  Does the zero-shot advantage on real metro flow survive a gradient-boosted competitor
+  given a daily lag, a horizon-matched training grid, a tuned configuration and a
+  per-series fit?
+
+sites:
+  - hzmetro
+
+seeds: [0]
+
+protocol:
+  context_length: 192
+  horizons: [1, 2, 4, 8]
+  stride: 2
+  quantiles: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+  mase_season: null
+  require_observed: true
+
+sensor_profile: clean
+covariates: all
+reconcilers: [none]
+
+methods:
+  # Reference points, so the table stands on its own rather than needing a join.
+  - name: seasonal_naive
+  - name: timesfm3_univariate
+
+  # Arm 1: exactly what the submitted paper ran. Reproduces E8_hzmetro's LightGBM.
+  - name: global_lightgbm
+    label: lightgbm_as_submitted
+
+  # Arm 2: the only change is that it is trained at the steps it is scored at.
+  - name: global_lightgbm
+    label: lightgbm_horizon_matched
+    params:
+      max_horizon: 8
+      train_steps: [1, 2, 3, 4, 5, 6, 7, 8]
+
+  # Arm 3: adds the daily lag and its neighbours, from scripts: seasonal_lags(900,
+  # weekly=False). Written out rather than computed so the table can be audited.
+  - name: global_lightgbm
+    label: lightgbm_seasonal_lags
+    params:
+      max_horizon: 8
+      train_steps: [1, 2, 3, 4, 5, 6, 7, 8]
+      lags: [1, 2, 3, 5, 10, 15, 30, 60, 95, 96, 97, 120, 192]
+
+  # Arm 4: adds a hyperparameter search over DEFAULT_TUNE_GRID, selected by pinball loss
+  # at the median on the last 20 percent of the training rows, which are strictly later
+  # in time than the rows fitted on. The winner is refitted on the whole training window
+  # and recorded in the run manifest.
+  - name: global_lightgbm
+    label: lightgbm_tuned
+    params:
+      max_horizon: 8
+      train_steps: [1, 2, 3, 4, 5, 6, 7, 8]
+      lags: [1, 2, 3, 5, 10, 15, 30, 60, 95, 96, 97, 120, 192]
+      tune: true
+
+  # Arm 5: removes the pooling across series entirely, which is the model a practitioner
+  # with one station would build. 240 series times nine quantile levels.
+  - name: per_series_lightgbm
+    label: lightgbm_per_series
+    params:
+      max_horizon: 8
+      train_steps: [1, 2, 3, 4, 5, 6, 7, 8]
+      lags: [1, 2, 3, 5, 10, 15, 30, 60, 95, 96, 97, 120, 192]
+
+notes:
+  reference_method: seasonal_naive+none
+  training_window: >-
+    The training window is the site's 60 percent train split plus the 20 percent
+    validation split, which is 1902 of 2377 steps, about 19.8 days at 15 minute
+    resolution. It ends at least one horizon before the first scored origin.
+  caveat: >-
+    One seed. Only the gradient-boosted arms are stochastic at all, and LightGBM is run
+    with deterministic=true and a fixed random_state, so a second seed would reproduce
+    the first. The determinism claim is checked in the analysis script, not assumed.
