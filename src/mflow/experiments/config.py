@@ -34,7 +34,14 @@ from mflow.forecast import available_forecasters
 CovariateSet = Literal["none", "calendar", "environment", "all"]
 
 #: Reconcilers an experiment can name. ``none`` is the unreconciled forecast.
-ReconcilerName = Literal["none", "mint", "uniform_weight", "proposed"]
+ReconcilerName = Literal[
+    "none",
+    "mint",
+    "unbounded_uncertainty",
+    "unbounded_uniform",
+    "uniform_weight",
+    "proposed",
+]
 
 #: How a point reconciliation is carried through the quantile fan.
 QuantileStrategy = Literal["shift", "per_quantile"]

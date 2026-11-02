@@ -1,0 +1,193 @@
+checking, per method, whether seeds are independent replicates
+  robod    bit-identical across seeds: chronos2_multivariate, global_lightgbm, historical_average, last_value, seasonal_naive, timesfm3_multivariate, timesfm3_univariate, toto2
+  robod    genuinely stochastic:      none
+  hzmetro  bit-identical across seeds: chronos2_multivariate, historical_average, last_value, seasonal_naive, timesfm3_multivariate, timesfm3_univariate, toto2
+  hzmetro  genuinely stochastic:      global_lightgbm
+
+figures: skill by horizon
+figures: point versus probabilistic, calibration, data efficiency
+
+the gradient-boosted re-specification (E10)
+  robod: MASE by horizon
+                             5      15     30     60
+    toto2                     0.186  0.294  0.328  0.374
+    lightgbm_per_series       0.278  0.407  0.460  0.512
+    last_value                0.164  0.361  0.449  0.538
+    lightgbm_horizon_matched  0.231  0.406  0.480  0.550
+    lightgbm_tuned            0.226  0.403  0.481  0.551
+    lightgbm_seasonal_lags    0.237  0.411  0.487  0.556
+    lightgbm_as_submitted     0.263  0.439  0.517  0.601
+    seasonal_naive            0.758  0.819  0.811  0.796
+    toto2 vs lightgbm_per_series         +26.8%  p=2.06e-02  holm=False  zero-shot ahead
+    toto2 vs last_value                  +29.3%  p=2.81e-02  holm=False  zero-shot ahead
+    toto2 vs lightgbm_horizon_matched    +31.0%  p=1.72e-02  holm=False  zero-shot ahead
+    toto2 vs lightgbm_tuned              +31.1%  p=1.44e-02  holm=False  zero-shot ahead
+    toto2 vs lightgbm_seasonal_lags      +31.8%  p=1.32e-02  holm=False  zero-shot ahead
+    toto2 vs lightgbm_as_submitted       +37.2%  p=5.11e-03  holm=True  zero-shot ahead
+    toto2 vs seasonal_naive              +54.0%  p=2.76e-08  holm=True  zero-shot ahead
+  hzmetro: MASE by horizon
+                            15     30     60     120
+    lightgbm_per_series       0.493  0.504  0.506  0.511
+    timesfm3_univariate       0.536  0.556  0.588  0.613
+    seasonal_naive            0.764  0.772  0.757  0.731
+    lightgbm_tuned            0.581  0.587  0.673  0.805
+    lightgbm_seasonal_lags    0.635  0.640  0.735  0.899
+    lightgbm_horizon_matched  0.719  0.771  0.867  0.996
+    lightgbm_as_submitted     0.792  0.873  1.006  1.135
+    timesfm3_univariate vs lightgbm_per_series         -28.9%  p=1.44e-02  holm=True  LOCAL AHEAD
+    timesfm3_univariate vs seasonal_naive              +12.0%  p=3.04e-01  holm=False  zero-shot ahead
+    timesfm3_univariate vs lightgbm_tuned              +22.0%  p=1.04e-04  holm=True  zero-shot ahead
+    timesfm3_univariate vs lightgbm_seasonal_lags      +31.1%  p=1.53e-06  holm=True  zero-shot ahead
+    timesfm3_univariate vs lightgbm_horizon_matched    +37.3%  p=1.66e-06  holm=True  zero-shot ahead
+    timesfm3_univariate vs lightgbm_as_submitted       +44.8%  p=1.06e-07  holm=True  zero-shot ahead
+
+context length sweep (E9)
+  robod: MASE at the longest horizon, 261 common origins
+                          1      2      3      7      14
+    chronos2_multivariate  0.470  0.412  0.392  0.348  0.346
+    historical_average     0.818  0.749  0.618  0.650  0.745
+    last_value             0.529  0.529  0.529  0.529  0.529
+    seasonal_naive         0.761  0.814  0.761  0.761  0.761
+    seasonal_naive_weekly    NaN    NaN    NaN    NaN  0.887
+    timesfm3_multivariate  0.508  0.409  0.389  0.315  0.314
+    timesfm3_univariate    0.476  0.413  0.406  0.336  0.332
+    toto2                  0.454  0.374  0.358  0.310  0.309
+  hzmetro: MASE at the longest horizon, 196 common origins
+                          1      2      3      7      14
+    chronos2_multivariate  2.214  0.827  0.673  0.470  0.426
+    historical_average     0.924  0.900  0.601  0.487  0.541
+    last_value             2.155  2.155  2.155  2.155  2.155
+    seasonal_naive         0.774  0.781  0.777  0.774  0.774
+    seasonal_naive_weekly    NaN    NaN    NaN    NaN  0.598
+    timesfm3_multivariate  1.042  0.665  0.584  0.448  0.433
+    timesfm3_univariate    1.037  0.677  0.557  0.424  0.414
+    toto2                  1.842  0.919  0.788  0.656  0.593
+
+calibration separated from sharpness
+  robod at horizon 12
+                       coverage  width  calibration_error  scale_to_nominal  width_at_matched_coverage  coverage_after_rescaling  fraction_of_intervals_degenerate
+    method                                                                                                                                                            
+    toto2                     0.901  1.173              0.101             0.655                      0.768                     0.836                             0.206
+    timesfm3_multivariate     0.892  1.189              0.092             0.700                      0.832                     0.840                             0.226
+    timesfm3_univariate       0.890  1.268              0.090             0.673                      0.853                     0.837                             0.210
+    chronos2_multivariate     0.912  1.446              0.112             0.789                      1.141                     0.838                             0.224
+    global_lightgbm           0.944  1.900              0.144             0.816                      1.550                     0.883                             0.414
+    seasonal_naive            0.839  2.346              0.039             1.600                      3.754                     0.844                             0.430
+    historical_average        0.696  0.609              0.104               NaN                        NaN                       NaN                             0.573
+    last_value                0.821  0.063              0.021               NaN                        NaN                       NaN                             0.947
+  hzmetro at horizon 4
+                       coverage    width  calibration_error  scale_to_nominal  width_at_matched_coverage  coverage_after_rescaling  fraction_of_intervals_degenerate
+    method                                                                                                                                                              
+    historical_average        0.367   25.105              0.433             3.724                     93.494                     0.726                             0.093
+    timesfm3_multivariate     0.759   90.113              0.041             1.089                     98.115                     0.800                             0.000
+    timesfm3_univariate       0.774   96.947              0.026             1.044                    101.213                     0.800                             0.000
+    chronos2_multivariate     0.825  114.731              0.025             0.917                    105.230                     0.800                             0.000
+    seasonal_naive            0.696   84.449              0.104             1.280                    108.095                     0.800                             0.000
+    toto2                     0.826  123.996              0.026             0.927                    114.986                     0.800                             0.001
+    global_lightgbm           0.819  188.710              0.019             0.862                    162.723                     0.800                             0.000
+    last_value                0.586   85.898              0.214             2.310                    198.417                     0.800                             0.000
+
+dependence between origins
+  robod: toto2 vs last_value, n=261, lag1 rho=+0.573
+    p at published lag 11 = 2.814e-02; at design-implied lag 0 = 2.063e-05; block bootstrap CI -0.3635 to -0.0453 (excludes zero: True)
+  hzmetro: timesfm3_multivariate vs seasonal_naive, n=196, lag1 rho=+0.920
+    p at published lag 7 = 1.624e-01; at design-implied lag 3 = 7.276e-02; block bootstrap CI -11.6972 to +1.4550 (excludes zero: False)
+
+simulator profile, at both operating points
+  baseline   479 days, peak occupancy 69.6 persons, 2.7% of room-steps at capacity
+  crowded    119 days, peak occupancy 84.4 persons, 8.0% of room-steps at capacity
+
+between-dataset ordering (three points, reported as such)
+  ROBOD      S_m = 0.440 +/- 0.120   gain = +30.5%
+  HZMetro    S_m = 0.789 +/- 0.004   gain = +16.2%
+  Simulated  S_m = 0.550 +/- 0.057   gain = -5.3%
+
+within-dataset regression: the real test of the hypothesis
+  E8_hzmetro   n=160  slope=   -17.0  95% CI [-38, 4]  p=0.120  R2=0.015  rho=-0.170
+  E8_robod     n=  5  slope=   -16.0  95% CI [-92, 60]  p=0.706  R2=0.054  rho=-0.200
+
+reconciliation study (offline, from stored forecasts)
+  --- baseline site (sim_house_museum)
+                       residual_after  violation_after  mae_after  crps_after  peak_error_after  high_occupancy_mae_after  solve_time_ms
+    reconciler                                                                                                                              
+    none                           1.0553           0.0059     0.3495      0.2687            1.2979                    4.3192         0.0000
+    mint                           0.0000           2.0624     0.3516      0.2719            1.2581                    4.3089         0.0000
+    unbounded_uncertainty          0.0000           1.4139     0.3485      0.2700            1.2227                    4.2855         2.5806
+    uniform_weight                 0.0000           0.0000     0.3506      0.2717            1.2503                    4.3067         6.1340
+    proposed                       0.0000           0.0000     0.3475      0.2697            1.2166                    4.2804         6.2408
+    (change in MAE, negative is better; CI is on the mean)
+    arm                    forecaster                mean            95% CI  median         p  worse
+    mint                   global_lightgbm         +0.90% [ +0.67, +1.16]  +0.00%  7.87e-17    34%
+    mint                   timesfm3_multivariate   +0.37% [ +0.26, +0.48]  +0.05%  1.12e-37    95%
+    unbounded_uncertainty  global_lightgbm         +0.20% [ -0.08, +0.49]  +0.00%  5.88e-01    19%
+    unbounded_uncertainty  timesfm3_multivariate   -0.71% [ -1.04, -0.40]  +0.03%  2.55e-03    75%
+    uniform_weight         global_lightgbm         +0.46% [ +0.32, +0.61]  +0.00%  1.34e-11    32%
+    uniform_weight         timesfm3_multivariate   +0.22% [ +0.13, +0.32]  +0.03%  1.19e-24    89%
+    proposed               global_lightgbm         -0.10% [ -0.39, +0.19]  +0.00%  1.10e-01    15%
+    proposed               timesfm3_multivariate   -0.98% [ -1.41, -0.61]  +0.01%  1.77e-01    70%
+    proposed_vs_uniform    global_lightgbm         -0.56% [ -0.83, -0.29]  +0.00%  4.68e-08     9%
+    proposed_vs_uniform    timesfm3_multivariate   -1.20% [ -1.70, -0.77]  -0.01%  7.13e-23    12%
+    proposed_vs_unbounded  global_lightgbm         -0.30% [ -0.39, -0.23]  +0.00%  1.26e-13     4%
+    proposed_vs_unbounded  timesfm3_multivariate   -0.28% [ -0.44, -0.16]  -0.02%  6.24e-44     2%
+    unbounded_vs_mint      global_lightgbm         -0.69% [ -0.94, -0.46]  +0.00%  9.07e-09     8%
+    unbounded_vs_mint      timesfm3_multivariate   -1.07% [ -1.49, -0.69]  -0.01%  1.44e-25    20%
+  --- crowded site (sim_house_museum_crowded)
+                       residual_after  violation_after  mae_after  crps_after  peak_error_after  high_occupancy_mae_after  solve_time_ms
+    reconciler                                                                                                                              
+    none                           0.9602           0.4509     0.3654      0.2914            1.1127                    2.8267         0.0000
+    mint                           0.0000           2.9438     0.3676      0.2948            1.0900                    2.8294         0.0000
+    unbounded_uncertainty          0.0000           2.3770     0.3652      0.2931            1.0759                    2.8586         2.6476
+    uniform_weight                 0.0000           0.0000     0.3661      0.2943            1.0806                    2.8209         8.2249
+    proposed                       0.0000           0.0000     0.3633      0.2926            1.0685                    2.8489         7.2339
+    (change in MAE, negative is better; CI is on the mean)
+    arm                    forecaster                mean            95% CI  median         p  worse
+    mint                   global_lightgbm         +0.98% [ +0.79, +1.14]  +0.00%  3.04e-19    39%
+    mint                   timesfm3_multivariate   +0.29% [ +0.18, +0.39]  +0.07%  1.52e-32    93%
+    unbounded_uncertainty  global_lightgbm         +0.59% [ +0.27, +0.79]  +0.00%  1.14e-08    30%
+    unbounded_uncertainty  timesfm3_multivariate   -0.66% [ -1.00, -0.33]  +0.02%  1.00e-05    77%
+    uniform_weight         global_lightgbm         +0.47% [ +0.31, +0.58]  +0.00%  2.43e-10    34%
+    uniform_weight         timesfm3_multivariate   -0.05% [ -0.24, +0.10]  +0.04%  2.36e-18    87%
+    proposed               global_lightgbm         +0.17% [ -0.21, +0.41]  +0.00%  3.00e-01    22%
+    proposed               timesfm3_multivariate   -1.25% [ -1.69, -0.82]  +0.01%  4.73e-01    60%
+    proposed_vs_uniform    global_lightgbm         -0.30% [ -0.62, -0.08]  +0.00%  3.34e-05    11%
+    proposed_vs_uniform    timesfm3_multivariate   -1.20% [ -1.59, -0.79]  -0.03%  3.39e-24    11%
+    proposed_vs_unbounded  global_lightgbm         -0.42% [ -0.55, -0.32]  +0.00%  1.38e-17     5%
+    proposed_vs_unbounded  timesfm3_multivariate   -0.60% [ -0.80, -0.41]  -0.03%  6.67e-49     1%
+    unbounded_vs_mint      global_lightgbm         -0.39% [ -0.69, -0.18]  +0.00%  1.96e-06    11%
+    unbounded_vs_mint      timesfm3_multivariate   -0.94% [ -1.30, -0.59]  -0.04%  8.73e-28    18%
+
+how coherent are the non-median quantile levels?
+                    residual  violation
+    strategy     level                     
+    per_quantile 0.1    0.012154   0.000000
+                 0.2    0.008726   0.000000
+                 0.3    0.007505   0.000000
+                 0.4    0.007525   0.000000
+                 0.5    0.005535   0.000000
+                 0.6    0.004484   0.000000
+                 0.7    0.003807   0.000000
+                 0.8    0.003210   0.000000
+                 0.9    0.004188   0.000000
+    shift        0.1    0.043702   9.831946
+                 0.2    0.041152   6.237504
+                 0.3    0.044408   4.347052
+                 0.4    0.039057   2.179067
+                 0.5    0.000000   0.000000
+                 0.6    0.032562   0.131960
+                 0.7    0.057696   0.390023
+                 0.8    0.068170   1.284593
+                 0.9    0.084736   6.655850
+  crossing rate before the monotone repair:
+strategy
+    per_quantile    0.0
+    shift           0.0
+
+sensitivity of the projection to the sigma mapping
+               mae_after  max_difference_from_published  fraction_at_sigma_floor  residual_after    n
+    sigma_variant                                                                                        
+    gaussian_40     0.318983                       1.879714                 0.695914             0.0  120
+    gaussian_60     0.318089                       1.659805                 0.669589             0.0  120
+    gaussian_80     0.317605                       0.000000                 0.636186             0.0  120
+    raw_width_80    0.317605                       0.000000                 0.636186             0.0  120
+
+wrote figures to /Users/shahabanbarjafari/Desktop/MySandBox/zero-shot-FMF/paper/Topology_Constrained_Reconciliation_for_Zero_Shot_Forecastingof_Occupancy_and_Flow/figures and tables to /Users/shahabanbarjafari/Desktop/MySandBox/zero-shot-FMF/paper/Topology_Constrained_Reconciliation_for_Zero_Shot_Forecastingof_Occupancy_and_Flow/tables

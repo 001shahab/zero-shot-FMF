@@ -11,6 +11,15 @@ model is confident about is therefore held close to its raw value, and the corre
 pushed onto the series the model is unsure of. The ``uniform_weight`` ablation replaces
 ``W`` with the identity and isolates whether that weighting is doing any work.
 
+``W`` is normalised to unit mean diagonal before it reaches the solver. Only the relative
+weights affect the argmin, so the normalisation changes nothing mathematically, but it
+does mean the constant 2.5631 divides out: any mapping of the form
+``sigma = c (q90 - q10)`` with ``c > 0`` yields the identical projection. The Gaussian
+reading of the interval therefore fixes only the shape of ``W`` across coordinates, not
+its level, and the projection is invariant to the nominal interval width that was used to
+read it off. What the mapping does assume is that a wider predictive interval means a less
+reliable coordinate, monotonically and at the same rate for every coordinate.
+
 The problem is a convex QP with a fixed constraint matrix. It is expressed once as a
 CVXPY problem with parameters, so the canonicalisation and OSQP's symbolic factorisation
 of ``A`` are reused across every origin of a rolling-origin experiment; only the
@@ -260,7 +269,15 @@ class ProjectionReconciler(Reconciler):
             **_polish_option(),
             **(solver_options or {}),
         }
-        self.name = "proposed" if weighting == "uncertainty" else "uniform_weight"
+        # The name has to distinguish the arm that drops the box, because that arm is
+        # what separates the effect of the inequality constraints from the effect of the
+        # weighting matrix. Comparing the proposed projection against MinT changes both
+        # at once -- MinT uses an estimated error covariance and no box -- so on its own
+        # it cannot attribute an accuracy difference to either.
+        if weighting == "uncertainty":
+            self.name = "proposed" if enforce_bounds else "unbounded_uncertainty"
+        else:
+            self.name = "uniform_weight" if enforce_bounds else "unbounded_uniform"
         self._compiled: dict[tuple[int, int, bool], _CompiledProblem] = {}
 
     # -- problem construction ------------------------------------------------ #
@@ -307,7 +324,20 @@ class ProjectionReconciler(Reconciler):
             )
         spread = np.maximum(flatten(sigma), self.sigma_floor)
         weights = 1.0 / np.square(spread)
-        return weights + self.ridge * float(np.mean(weights))
+        weights = weights + self.ridge * float(np.mean(weights))
+        # Scaling W by any positive constant leaves the argmin untouched, so only the
+        # relative weights carry information. The absolute scale does reach the solver,
+        # though, because OSQP's eps_abs is compared against an unnormalised residual: a
+        # panel measured in persons and the same panel measured in thousands of persons
+        # would otherwise be solved to different effective accuracies. Normalising the
+        # mean weight to one makes the solve depend on the spread only through its shape.
+        mean_weight = float(np.mean(weights))
+        if not np.isfinite(mean_weight) or mean_weight <= 0.0:
+            raise ReconciliationError(
+                f"the uncertainty weights have mean {mean_weight!r}, which cannot be "
+                "normalised; the predictive spread is degenerate"
+            )
+        return weights / mean_weight
 
     # -- the projection ------------------------------------------------------ #
 
@@ -413,12 +443,29 @@ class ReconcilerRegistry:
 
 
 def default_registry() -> ReconcilerRegistry:
-    """The four strategies compared in experiment E3."""
+    """The strategies compared in the reconciliation study.
+
+    Five arms, arranged so that each adjacent pair differs in one thing.
+
+    ``none`` is the raw forecast. ``mint`` is the published minimum-trace map: an
+    estimated shrinkage error covariance as the metric, equality constraints only.
+    ``unbounded_uncertainty`` keeps MinT's constraint set and swaps the metric for the
+    diagonal read off the model's own quantile spread, so ``mint`` against it isolates
+    the weighting matrix. ``proposed`` adds the box to ``unbounded_uncertainty``, so that
+    pair isolates the inequality constraints. ``uniform_weight`` keeps the box and
+    replaces the metric with the identity, so that pair isolates the weighting.
+    """
     from mflow.reconcile.mint import MinTReconciler
 
     registry = ReconcilerRegistry()
     registry.register("none", IdentityReconciler)
     registry.register("mint", MinTReconciler)
+    registry.register(
+        "unbounded_uncertainty",
+        lambda **kw: ProjectionReconciler(
+            weighting="uncertainty", enforce_bounds=False, **kw
+        ),
+    )
     registry.register(
         "uniform_weight", lambda **kw: ProjectionReconciler(weighting="uniform", **kw)
     )

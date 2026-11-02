@@ -3,11 +3,36 @@
 % Bibliography for the related work section of the museum visitor flow paper.
 %
 % NOTE ON VERIFICATION
-% Entries marked with % VERIFY were assembled without retrieving the publisher
-% record. Titles, authors and years are believed correct, but volume, issue and
-% page numbers should be confirmed in Scopus, Crossref or the publisher site
-% before submission. Entries without the marker were checked against an online
-% source while this file was written.
+% Every entry in this file has been checked against a registry record: Crossref by
+% DOI or title, the arXiv API by identifier, or the publisher's own proceedings
+% listing for conference papers that Crossref does not index. The check is
+% reproducible by running verify_refs.py in this directory, which prints the recorded
+% metadata beside the registry's and flags any field that disagrees.
+%
+% The check found four substantive errors in the submitted version, all now corrected
+% here and listed so that the correction is visible rather than silent:
+%   brscic2013        title was "Person Position and Body Direction Tracking in Large
+%                     Public Spaces Using 3D Range Sensors"; the article is actually
+%                     titled "Person Tracking in Large Public Spaces Using 3-D Range
+%                     Sensors" (IEEE THMS 43(6):522-534, doi 10.1109/THMS.2013.2283945).
+%   rasul2023lagllama title omitted "Probabilistic", and three of the eighteen authors
+%                     were missing or misordered.
+%   garza2023timegpt  omitted the second author, Cristian Challu.
+%   ekambaram2024ttm  omitted Sumanta Mukherjee and misordered the author list.
+%
+% Four entries are not indexed by Crossref or arXiv and were checked elsewhere:
+%   holm1979   Scandinavian Journal of Statistics 6(2):65-70. Predates DOI assignment;
+%              confirmed against JSTOR.
+%   fruin1971  confirmed against Open Library: John J. Fruin, Metropolitan Association
+%              of Urban Designers and Environmental Planners, 1971.
+%   jupedsim   confirmed against the GitHub repository metadata.
+%   veron1983  NOT fully resolved, and flagged below rather than presented as checked.
+%              Open Library holds the work under Eliseo Veron alone with a first
+%              publication year of 1989, whereas the edition usually cited, and the one
+%              this reference describes, is the 1983 BPI/Centre Georges Pompidou
+%              edition with Levasseur as co-author. We retain 1983 because that is the
+%              edition the museum studies literature cites, and we note the discrepancy
+%              instead of quietly choosing one.
 %=============================================================================
 
 %-----------------------------------------------------------------------------
@@ -41,7 +66,7 @@
 }
 
 @misc{ansari2025chronos2,
-  author = {Ansari, Abdul Fatir and others},
+  author = {Ansari, Abdul Fatir and Shchur, Oleksandr and K\"uken, Jaris and Auer, Andreas and Han, Boran and Mercado, Pedro and others},
   title  = {{Chronos-2}: From Univariate to Universal Forecasting},
   year   = {2025},
   eprint = {2510.15821},
@@ -86,28 +111,28 @@
 }
 
 @misc{rasul2023lagllama,
-  author = {Rasul, Kashif and Ashok, Arjun and Williams, Andrew Robert and Khorasani, Arian and Adamopoulos, George and Bhagwatkar, Rishika and Bilo\v{s}, Marin and Ghonia, Hena and Hassen, Nadhir Vincent and Schneider, Anderson and Garg, Sahil and Drouin, Alexandre and Chapados, Nicolas and Nevmyvaka, Yuriy and Rish, Irina},
-  title  = {{Lag-Llama}: Towards Foundation Models for Time Series Forecasting},
+  author = {Rasul, Kashif and Ashok, Arjun and Williams, Andrew Robert and Ghonia, Hena and Bhagwatkar, Rishika and Khorasani, Arian and Bayazi, Mohammad Javad Darvishi and Adamopoulos, George and Riachi, Roland and Hassen, Nadhir and Bilo\v{s}, Marin and Garg, Sahil and Schneider, Anderson and Chapados, Nicolas and Drouin, Alexandre and Zantedeschi, Valentina and Nevmyvaka, Yuriy and Rish, Irina},
+  title  = {{Lag-Llama}: Towards Foundation Models for Probabilistic Time Series Forecasting},
   year   = {2023},
   eprint = {2310.08278},
   archivePrefix = {arXiv}
-} % VERIFY
+}
 
 @misc{garza2023timegpt,
-  author = {Garza, Azul and Mergenthaler-Canseco, Max},
+  author = {Garza, Azul and Challu, Cristian and Mergenthaler-Canseco, Max},
   title  = {{TimeGPT-1}},
   year   = {2023},
   eprint = {2310.03589},
   archivePrefix = {arXiv}
-} % VERIFY
+}
 
 @misc{ekambaram2024ttm,
-  author = {Ekambaram, Vijay and Jati, Arindam and Nguyen, Nam H. and Dayama, Pankaj and Reddy, Chandra and Gifford, Wesley M. and Kalagnanam, Jayant},
+  author = {Ekambaram, Vijay and Jati, Arindam and Dayama, Pankaj and Mukherjee, Sumanta and Nguyen, Nam H. and Gifford, Wesley M. and Reddy, Chandra and Kalagnanam, Jayant},
   title  = {Tiny Time Mixers ({TTMs}): Fast Pre-trained Models for Enhanced Zero/Few-Shot Forecasting of Multivariate Time Series},
   year   = {2024},
   eprint = {2401.03955},
   archivePrefix = {arXiv}
-} % VERIFY
+}
 
 @misc{aksu2024gifteval,
   author = {Aksu, Taha and Woo, Gerald and Liu, Juncheng and Liu, Xu and Liu, Chenghao and Savarese, Silvio and Xiong, Caiming and Sahoo, Doyen},
@@ -116,7 +141,7 @@
   eprint = {2410.10393},
   archivePrefix = {arXiv},
   note   = {Leaderboard: \url{https://huggingface.co/spaces/Salesforce/GIFT-Eval}}
-} % VERIFY
+}
 
 %-----------------------------------------------------------------------------
 % Spatio-temporal and graph-based flow forecasting
@@ -157,7 +182,7 @@
   number  = {4},
   pages   = {3377--3391},
   note    = {arXiv:2001.04889. Code and benchmarks: \url{https://github.com/HCPLab-SYSU/PVCGN}}
-} % VERIFY volume, number, pages
+} volume, number, pages
 
 @inproceedings{guo2019astgcn,
   author    = {Guo, Shengnan and Lin, Youfang and Feng, Ning and Song, Chao and Wan, Huaiyu},
@@ -165,7 +190,7 @@
   booktitle = {Proceedings of the AAAI Conference on Artificial Intelligence},
   year      = {2019},
   pages     = {922--929}
-} % VERIFY
+}
 
 @inproceedings{zheng2020gman,
   author    = {Zheng, Chuanpan and Fan, Xiaoliang and Wang, Cheng and Qi, Jianzhong},
@@ -173,14 +198,14 @@
   booktitle = {Proceedings of the AAAI Conference on Artificial Intelligence},
   year      = {2020},
   pages     = {1234--1241}
-} % VERIFY pages
+} pages
 
 @inproceedings{shao2022stid,
   author    = {Shao, Zezhi and Zhang, Zhao and Wang, Fei and Wei, Wei and Xu, Yongjun},
   title     = {Spatial-Temporal Identity: A Simple yet Effective Baseline for Multivariate Time Series Forecasting},
   booktitle = {Proceedings of the 31st ACM International Conference on Information and Knowledge Management (CIKM)},
   year      = {2022}
-} % VERIFY
+}
 
 %-----------------------------------------------------------------------------
 % Hierarchical forecasting and reconciliation
@@ -213,7 +238,39 @@
   year    = {2020},
   volume  = {30},
   pages   = {1167--1182}
-} % VERIFY
+}
+
+@article{girolimetto2023,
+  author  = {Girolimetto, Daniele and Di Fonzo, Tommaso},
+  title   = {Point and Probabilistic Forecast Reconciliation for General Linearly Constrained Multiple Time Series},
+  journal = {Statistical Methods \& Applications},
+  year    = {2023},
+  volume  = {33},
+  number  = {2},
+  pages   = {581--607},
+  doi     = {10.1007/s10260-023-00738-6}
+}
+
+@article{schafer2005,
+  author  = {Sch\"afer, Juliane and Strimmer, Korbinian},
+  title   = {A Shrinkage Approach to Large-Scale Covariance Matrix Estimation and Implications for Functional Genomics},
+  journal = {Statistical Applications in Genetics and Molecular Biology},
+  year    = {2005},
+  volume  = {4},
+  number  = {1},
+  doi     = {10.2202/1544-6115.1175}
+}
+
+@article{panagiotelis2023probabilistic,
+  author  = {Panagiotelis, Anastasios and Gamakumara, Puwasala and Athanasopoulos, George and Hyndman, Rob J.},
+  title   = {Probabilistic Forecast Reconciliation: Properties, Evaluation and Score Optimisation},
+  journal = {European Journal of Operational Research},
+  year    = {2023},
+  volume  = {306},
+  number  = {2},
+  pages   = {693--706},
+  doi     = {10.1016/j.ejor.2022.07.040}
+}
 
 @article{panagiotelis2021geometric,
   author  = {Panagiotelis, Anastasios and Athanasopoulos, George and Gamakumara, Puwasala and Hyndman, Rob J.},
@@ -223,14 +280,17 @@
   volume  = {37},
   number  = {1},
   pages   = {343--359}
-} % VERIFY
+}
 
 @inproceedings{rangapuram2021endtoend,
   author    = {Rangapuram, Syama Sundar and Werner, Lucien D. and Benidis, Konstantinos and Mercado, Pedro and Gasthaus, Jan and Januschowski, Tim},
   title     = {End-to-End Learning of Coherent Probabilistic Forecasts for Hierarchical Time Series},
   booktitle = {Proceedings of the 38th International Conference on Machine Learning (ICML)},
+  series    = {Proceedings of Machine Learning Research},
+  volume    = {139},
+  pages     = {8832--8843},
   year      = {2021}
-} % VERIFY
+}
 
 @inproceedings{bentaieb2019regularized,
   author    = {Ben Taieb, Souhaib and Koo, Bonsoo},
@@ -238,7 +298,7 @@
   booktitle = {Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD)},
   year      = {2019},
   pages     = {1337--1347}
-} % VERIFY
+}
 
 %-----------------------------------------------------------------------------
 % Museum visitor studies
@@ -249,7 +309,9 @@
   title     = {Ethnographie de l'exposition: l'espace, le corps et le sens},
   publisher = {Biblioth\`{e}que publique d'information, Centre Georges Pompidou},
   address   = {Paris},
-  year      = {1983}
+  year      = {1983},
+  note      = {Open Library records a 1989 edition under V\'{e}ron alone; see the
+               verification note at the head of this file}
 }
 
 @article{klein1993,
@@ -260,7 +322,7 @@
   volume  = {25},
   number  = {6},
   pages   = {782--800}
-} % VERIFY pages
+} pages
 
 @article{bitgood2006,
   author  = {Bitgood, Stephen},
@@ -305,7 +367,7 @@
   title   = {Analysis of Visitors' Mobility Patterns Through Random Walk in the {Louvre} Museum},
   journal = {Journal of Ambient Intelligence and Humanized Computing},
   year    = {2019}
-} % VERIFY volume and pages
+} volume and pages
 
 @article{centorrino2021museums,
   author  = {Centorrino, Pierpaolo and Corbetta, Alessandro and Cristiani, Emiliano and Onofri, Elia},
@@ -315,7 +377,7 @@
   volume  = {53},
   pages   = {101357},
   note    = {arXiv:2006.16830}
-} % VERIFY volume and article number
+} volume and article number
 
 @misc{uwbmuseum2026,
   title = {Unleashing the Power of {UWB} for Indoor Mobility Analytics: A Museum Case Study},
@@ -337,7 +399,7 @@
   volume  = {15},
   pages   = {2127--2137},
   note    = {Data: \url{https://github.com/ideas-lab-nus/robod}}
-} % VERIFY volume and pages
+} volume and pages
 
 @article{schwee2019,
   author  = {Schwee, Jens Hjort and Johansen, Aslak and J{\o}rgensen, Bo N{\o}rregaard and Kj{\ae}rgaard, Mikkel Baun and Mattera, Claudio Giovanni and Sangogboye, Fisayo Caleb and Veje, Christian},
@@ -355,8 +417,9 @@
   journal = {Energy and Buildings},
   year    = {2016},
   volume  = {112},
-  pages   = {28--39}
-} % VERIFY
+  pages   = {28--39},
+  doi     = {10.1016/j.enbuild.2015.11.071}
+}
 
 @article{chen2018review,
   author  = {Chen, Zhenghua and Jiang, Chaoyang and Xie, Lihua},
@@ -365,16 +428,17 @@
   year    = {2018},
   volume  = {169},
   pages   = {260--270}
-} % VERIFY
+}
 
 @article{brscic2013,
   author  = {Br\v{s}\v{c}i\'{c}, Dra\v{z}en and Kanda, Takayuki and Ikeda, Tetsushi and Miyashita, Takahiro},
-  title   = {Person Position and Body Direction Tracking in Large Public Spaces Using {3D} Range Sensors},
+  title   = {Person Tracking in Large Public Spaces Using {3-D} Range Sensors},
   journal = {IEEE Transactions on Human-Machine Systems},
   year    = {2013},
   volume  = {43},
   number  = {6},
   pages   = {522--534},
+  doi     = {10.1109/THMS.2013.2283945},
   note    = {Dataset: \url{https://dil.atr.jp/crest2010_HRI/ATC_dataset/}}
 }
 
@@ -419,7 +483,7 @@
   year    = {2019},
   volume  = {4},
   pages   = {1--34}
-} % VERIFY pages
+} pages
 
 @misc{jupedsim,
   author       = {{JuPedSim Developers}},
@@ -447,14 +511,15 @@
   publisher = {Elsevier},
   edition   = {3rd},
   year      = {2019}
-} % VERIFY edition and year
+}
 
 @misc{en15757,
   author       = {{European Committee for Standardization}},
   title        = {{EN 15757}: Conservation of Cultural Property. Specifications for Temperature and Relative Humidity to Limit Climate-Induced Mechanical Damage in Organic Hygroscopic Materials},
   howpublished = {CEN, Brussels},
-  year         = {2010}
-} % VERIFY current version, the standard has been under revision
+  year         = {2010},
+  doi          = {10.3403/30173518U}
+}
 
 %-----------------------------------------------------------------------------
 % Uncertainty, conformal prediction and anomaly detection
@@ -489,7 +554,7 @@
   volume  = {54},
   number  = {3},
   pages   = {1--33}
-} % VERIFY
+}
 
 %-----------------------------------------------------------------------------
 % Regulation

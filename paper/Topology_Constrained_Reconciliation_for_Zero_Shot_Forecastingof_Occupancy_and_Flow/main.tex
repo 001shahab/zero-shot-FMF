@@ -39,6 +39,14 @@
 \newcommand{\Rb}{\mathbb{R}}
 \newcommand{\best}[1]{\textbf{#1}}
 
+% Revision markup. Text added or rewritten in response to the reviews is wrapped in
+% \new{...} and typeset in red. Setting \revisionmarkupfalse turns the colour off
+% without touching the text, which is how the camera-ready version is produced.
+\newif\ifrevisionmarkup
+\revisionmarkuptrue
+\definecolor{revision}{rgb}{0.75,0.05,0.05}
+\newcommand{\new}[1]{\ifrevisionmarkup\textcolor{revision}{#1}\else#1\fi}
+
 % Float placement. The results section queues seven floats in quick succession,
 % and the stock parameters are too tight to place them, which deadlocks the
 % float queue rather than merely producing ugly pages.
@@ -51,13 +59,13 @@
 \renewcommand{\floatpagefraction}{0.7}
 
 
-\title{Topology-Constrained Reconciliation for Zero-Shot Forecasting\\of Occupancy and Flow, with a Heritage Museum Benchmark}
+\title{Topology-Constrained Reconciliation for Zero-Shot Forecasting\\of \new{Building Occupancy and Doorway Flow}}
 
 \author{
   A. A. Jafari, C. Ozcinar\\
   University of Tartu \\
   Tartu, Estonia \\
-  \texttt{\{akbar.anbar.jafari\}@ut.ee} \\
+  \texttt{akbar.anbar.jafari@ut.ee} \\
   %% examples of more authors
    \And
   G. Anbarjafari \\
@@ -71,7 +79,7 @@
 \maketitle
 
 \begin{abstract}
-European museums are overwhelmingly housed in protected heritage buildings, where structural intervention is restricted and dense visitor flow threatens people, fabric and collection at once. Data-driven crowd management is blocked by a practical obstacle: predictive models need historical data from the specific building, and almost no heritage museum has any. We formulate indoor visitor dynamics as multivariate forecasting on a building graph, with room occupancy as node series and directional doorway counts as edge series, and ask whether a pre-trained time series foundation model can forecast such a building with no site-specific training. Because such models are topology-blind, we introduce an uncertainty-weighted constrained projection that maps a raw forecast onto the physically admissible set defined by discrete mass conservation, non-negativity and room capacity, using the model's own quantile spread as the metric. We prove the projection is unique, exactly coherent, and non-expansive towards any admissible truth, and we show that minimum trace reconciliation is exactly the special case that drops the inequality constraints, which we then observe breaking them by \num{1.74} persons per origin. Empirically, across \num{261} distinct origins of real room occupancy, \num{181} to \num{196} of real metro flow and \num{300} of a simulated museum, four zero-shot configurations of three foundation models are compared against four local baselines, one of them trained. The foundation models win on both real datasets, by \SI{30.5}{\percent} MASE at one hour on room occupancy and \SI{29.8}{\percent} at fifteen minutes on metro flow, the latter significant under Diebold-Mariano with Holm control, and they beat a trained gradient-boosted competitor at every horizon on both. They also dominate on uncertainty, reaching \SIrange{89}{92}{\percent} coverage of a nominal \SI{80}{\percent} interval at half the width of a seasonal baseline equipped with residual-based intervals. Two negative results are reported in full. The advantage is highly sensitive to context length: at one seasonal period of context the same models lose to a seasonal baseline on metro flow, and doubling the context reverses the comparison, which makes context length a confounder that published zero-shot evaluations on periodic data should control. And our pre-registered hypothesis that the advantage declines with the target's daily seasonal strength $S_m$, which the between-dataset ordering appeared to support, fails its within-dataset test on \num{160} series (slope $-17$ percentage points per unit $S_m$, \SI{95}{\percent} CI $[-38,+4]$, $R^2=\num{0.015}$); we report it as refuted rather than retaining the three-point ordering. The reconciliation layer removes a raw conservation violation of \num{1.05} persons per node per interval exactly, introduces no bound violation, improves MAE by \SIrange{0.5}{1.0}{\percent} and beats uniform weighting by \SIrange{0.9}{1.2}{\percent} per forecaster, in \SI{10.1}{\milli\second}. We release the benchmark, the reconciliation layer and the evaluation harness.
+\new{Buildings that host dense pedestrian traffic, from museums in protected heritage fabric to transport interchanges, must manage crowding without being able to widen a doorway, and data-driven management is blocked by a practical obstacle: predictive models need historical data from the specific building, and a newly instrumented site has none. We formulate indoor visitor dynamics as multivariate forecasting on a building graph, with room occupancy as node series and directional doorway counts as edge series, and ask whether a pre-trained time series foundation model can forecast such a building with no site-specific training. Because such models are topology-blind, we introduce an uncertainty-weighted constrained projection that maps a raw forecast onto the physically admissible set defined by discrete mass conservation, non-negativity, room capacity and doorway throughput, using the model's own quantile spread as the metric. We prove the projection is unique, exactly coherent, and non-expansive towards any admissible truth, that its solution is invariant to the scale of the quantile spread, and that minimum trace reconciliation is exactly the special case dropping the inequality constraints, which we then observe breaking them by \num{2.06} persons per origin and by \num{2.94} in a scenario where capacity binds. Empirically, across \num{261} distinct origins of real room occupancy, \num{181} to \num{196} of real metro flow and \num{300} of a simulated building, four zero-shot configurations of three foundation models are compared against local baselines including a gradient-boosted model specified with seasonal lags, tuned hyper-parameters and a per-series fit. The zero-shot models beat every trivial baseline on both real datasets, by \SI{30.5}{\percent} MASE at one hour on room occupancy and \SI{29.8}{\percent} at fifteen minutes on metro flow, but against the strong local competitor the result splits by site, ahead by \SI{26.8}{\percent} on occupancy and behind by \SI{28.9}{\percent} on flow, so we report transferability as a competitive cold-start default rather than as a dominance result. Separating calibration from sharpness likewise overturns our own prediction: a seasonal baseline is closer to nominal coverage, while at matched empirical coverage the foundation model's interval is \num{4.9} times narrower. Three negative results are reported in full. The seasonal baseline comparison is decided by context length, reversing between one and two seasonal periods and continuing to improve to about seven, which makes context length a confounder that zero-shot evaluations on periodic data should control. A moving-block bootstrap respecting the overlap between forecast origins puts zero inside the confidence interval for the metro advantage at the longest horizon, so pointwise significance there does not survive dependence. And our a priori hypothesis that the advantage declines with the target's daily seasonal strength $S_m$ fails its within-dataset test on \num{160} scored series (slope $-17$ percentage points per unit $S_m$, \SI{95}{\percent} CI $[-38,+4]$, $R^2=\num{0.015}$). The reconciliation layer removes a raw conservation violation of \num{1.05} persons per node per interval exactly, introduces no bound violation, improves mean absolute error by \SI{0.56}{\percent} and the error in the predicted peak by \SI{6.3}{\percent}, and beats uniform weighting by \SIrange{0.56}{1.20}{\percent} depending on the forecaster, in \SI{6.2}{\milli\second}; these reconciliation measurements are on simulated data, since no public dataset reports occupancy and doorway flow for one building, and real-building validation is stated as future work. We release the benchmark, the reconciliation layer and the evaluation harness.}
 \end{abstract}
 
 \noindent\textbf{Keywords:} time series foundation models \textendash{} zero-shot forecasting \textendash{} hierarchical reconciliation \textendash{} crowd flow \textendash{} cultural heritage \textendash{} occupancy prediction
@@ -82,23 +90,30 @@ European museums are overwhelmingly housed in protected heritage buildings, wher
 
 A museum in a protected building cannot be widened. Doorways, staircases and egress capacity are fixed by law as much as by masonry, and the only variable left to an operator is when and where visitors are asked to go. Three distinct risks converge on the same physical quantity, namely how many people are in which space and where they are heading next. Crowd safety depends on density at bottlenecks. Conservation of fabric and collection depends on cumulative visitor-induced heat, moisture and carbon dioxide rather than on instantaneous peaks \citep{camuffo2019,en15757}. Security depends on movement that does not match the pattern of the day. All three are served by one forecast and differ only in the decision rule applied on top of it.
 
-The obstacle is not modelling but data. The mature literature on spatio-temporal flow forecasting was developed for road traffic and metro ridership, where months of history from the network being forecast are available as a matter of course. Graph neural models such as DCRNN \citep{li2018dcrnn}, STGCN \citep{yu2018stgcn} and Graph WaveNet \citep{wu2019graphwavenet} are trained per network and are not defined on an unseen topology. Heritage museums are precisely where that assumption fails: they are small, numerous, individually under-resourced, and mostly uninstrumented, and a newly instrumented site yields no usable training data for weeks. A method that needs a year of data before its first useful forecast will not be deployed in this sector.
+\new{A reviewer asked which operational decisions the horizons we report actually support, noting that the three risks act on different timescales and read different indicators, and the question is a fair one because the answer constrains the whole design. Crowd safety is the fastest: a steward redirected to a bottleneck, or a timed-entry slot held back, needs \SIrange{15}{30}{\minute} of warning, which is why that range is the one Hypothesis~\ref{hyp:transfer} is stated over, and the indicator is peak occupancy relative to room capacity rather than mean error, which is why Section~\ref{sec:results} reports peak error separately. Conservation acts on hours: the quantity that damages a hygroscopic object is cumulative moisture and temperature load over a visiting day, and the decision is whether to cap admissions for the remainder of it, so the relevant horizon is one to two hours and the indicator is an integral rather than a peak. Security sits in between and is a detection problem rather than a control problem: the forecast supplies an expected pattern and the indicator is the size of the deviation from it. The horizons we evaluate, \SIrange{5}{120}{\minute}, span the first two of these. We evaluate none of the three decision rules themselves, because the experiments that would do so remain unrun, so this paragraph states what the forecast is for and not what it achieves operationally.}
 
-Time series foundation models offer a way out of the cold start, since they forecast unseen series with no task-specific training \citep{das2024timesfm,ansari2024chronos,woo2024moirai}. The current generation is natively multivariate, fills the whole horizon in one forward pass, and accepts covariates whose future values are known at forecast time \citep{timesfm3,ansari2025chronos2,khwaja2026toto2}, which matches museum operations closely, since timed entry slots and tour departures are known in advance. Two questions have not been answered. Whether pre-training transfers to indoor room-level human flow at all is open, because the standard benchmarks are dominated by retail, energy, finance and observability data \citep{aksu2024gifteval} and indoor occupancy is bounded above by capacity, bursty, frequently zero, and driven by scheduled events. And whether a topology-blind forecaster can be made to respect the building is open, because nothing in these architectures encodes that the quantities they emit are coupled by conservation of mass.
+The obstacle is \new{not primarily a modelling one}. The mature literature on spatio-temporal flow forecasting was developed for road traffic and metro ridership, where months of history from the network being forecast are available as a matter of course. Graph neural models such as DCRNN \citep{li2018dcrnn}, STGCN \citep{yu2018stgcn} and Graph WaveNet \citep{wu2019graphwavenet} are trained per network and are not defined on an unseen topology. Heritage museums are precisely where that assumption fails: they are small, numerous, individually under-resourced, and mostly uninstrumented. \new{A reviewer judged the submitted version's follow-on claim, that a newly instrumented site ``yields no usable training data for weeks'', too general to state as a fact, and we agree: how long a given building takes to yield usable data depends on its traffic volume, the sensors installed and the model being fitted, and we have not measured it for any real museum. What we can say without overreaching is narrower and still sufficient. On day one of instrumentation there is no history at all, so a method requiring site-specific training cannot produce a forecast, whereas a zero-shot method can. That is a statement about availability rather than about how long adequacy takes to arrive. We state it as the practical challenge motivating the work rather than as a universal limitation, and Section~\ref{sec:efficiency} reports what happened when we tested the stronger version of the claim on real data: it did not hold.}
 
-This paper answers both. On the first, the answer is affirmative and larger than we expected: with no site-specific training the foundation models beat every local baseline on both real datasets, including a trained gradient-boosted model, and they do so while supplying calibrated intervals that the baselines cannot match at comparable width.
+Time series foundation models offer a way out of the cold start, since they forecast unseen series with no task-specific training \citep{das2024timesfm,ansari2024chronos,woo2024moirai}. The current generation is natively multivariate, fills the whole horizon in one forward pass, and accepts covariates whose future values are known at forecast time \citep{timesfm3,ansari2025chronos2,khwaja2026toto2}\new{. Timed entry slots and tour departures are known in advance, so this capability is in principle a close match to museum operations. We must be explicit about how far we exercise it, because a reviewer correctly observed that the submitted introduction implied more than the experiments deliver, and asked in particular whether every model we use supports the capability. They do not, and the position differs by model. TimesFM 3.0 and Chronos-2 accept known-future covariates through interfaces we verified against the live repositories, and our wrappers for both expose that pathway. Our Toto-2.0 wrapper does not, because the inference signature on its model card takes only the variate tensor, and TimesFM 2.5 is used univariately throughout. Our data contract carries known-future covariates, the forecaster interface accepts them, and the simulator emits them, so the pathway is implemented and tested for the two models that support it. Whether supplying them improves accuracy is a separate question that we did not answer: the covariate ablation is listed among the unrun experiments in Section~\ref{sec:limits}, and every accuracy number in this paper comes from runs with no covariates supplied. The covariate channel is therefore part of the formulation rather than part of the evidence}. Two questions have not been answered. Whether pre-training transfers to indoor room-level human flow at all is open, because the standard benchmarks are dominated by retail, energy, finance and observability data \citep{aksu2024gifteval} and indoor occupancy is bounded above by capacity, bursty, frequently zero, and driven by scheduled events. And whether a topology-blind forecaster can be made to respect the building is open, because nothing in these architectures encodes that the quantities they emit are coupled by conservation of mass.
 
-That answer, however, turns out to be contingent on an experimental choice that is usually treated as a detail. We ran the identical protocol twice, differing only in the length of the context window, and the conclusion reversed: given one seasonal period of history the foundation models lose to a seasonal baseline on metro flow, and given two they beat it by a third. The same choice silently disables the baselines' own uncertainty estimates, because a seasonal method given exactly one season has no residual from which to form an interval. Both halves of that observation are methodological warnings rather than results about any model, and we report them prominently because a reader comparing published zero-shot numbers has no way to recover them from a leaderboard.
+This paper answers both, \new{and on the first the answer this revision reports is narrower and more interesting than the one we submitted. The submitted version claimed that the foundation models beat every local baseline on both real datasets, including a trained gradient-boosted model. A reviewer questioned whether the gradient-boosted comparison had been specified strongly enough to carry that weight, and the reviewer was right. Re-running it with daily and weekly seasonal lags, with tuned hyper-parameters, and fitted per series rather than pooled across the panel, reverses the conclusion on one of the two sites. On metro station flow the per-series gradient-boosted model reaches \num{0.511} MASE at \SI{120}{\minute} against \num{0.613} for the best zero-shot model, an advantage of \SI{28.9}{\percent} that survives Holm correction. On room occupancy the zero-shot ordering holds, with the foundation model ahead by \SI{26.8}{\percent}, although that margin is not individually significant after correction. We therefore state the transferability result conditionally: zero-shot forecasting is competitive with, and on one site better than, a well-specified local competitor, and the direction of the comparison depends on the site rather than being settled by the paradigm. Section~\ref{sec:lgbm} reports the full ladder from the weak specification we submitted to the strong one, so that a reader can see exactly how much of the original claim was an artefact of the competitor rather than a property of the models.}
 
-We also report a hypothesis of our own that failed. We pre-registered the claim that the zero-shot advantage declines with how much of the target's variance a periodic profile already explains, and the ordering across our three datasets initially appeared to confirm it. Tested properly, within a single dataset of \num{160} series where dataset identity is held fixed, the relationship is not distinguishable from zero. We state it as refuted in Section~\ref{sec:results} rather than retaining an ordering over three points, and Section~\ref{sec:discussion} explains why we now think the three-point version was close to circular in any case.
+\new{Two further findings of this kind are reported prominently because they are methodological warnings rather than results about any model, and a reader comparing published zero-shot numbers has no way to recover them from a leaderboard.} \new{The first is that the headline comparison} turns out to be contingent on an experimental choice that is usually treated as a detail. We ran the identical protocol twice, differing only in the length of the context window, and the conclusion reversed: given one seasonal period of history the foundation models lose to a seasonal baseline on metro flow, and given two they beat it by a third. The same choice silently disables the baselines' own uncertainty estimates, because a seasonal method given exactly one season has no residual from which to form an interval. \new{Extending the sweep to fourteen seasons, as a reviewer asked, shows that two is not where the curve flattens either: accuracy continues to improve to roughly seven seasons, so two seasons is a reporting convention rather than a saturation point.}
+
+\new{The second is a correction to our own probabilistic claim. The submitted version reported that the foundation models are better calibrated than the baselines. Separating calibration from sharpness, as a reviewer required, shows that this is false in the direction stated: on room occupancy the seasonal naive method sits \num{3.9} percentage points from nominal coverage against \num{10.1} for the best foundation model, so the baseline is the better calibrated of the two. What is true, and is the claim we now make, is that at a common empirical coverage the foundation model's interval is \num{4.9} times narrower, \num{0.77} against \num{3.75} persons. The advantage is sharpness at matched coverage, not calibration, and Section~\ref{sec:calib} reports both quantities separately so that the distinction cannot be collapsed again.}
+
+We also report a hypothesis of our own that failed. We \new{stated a priori} the claim that the zero-shot advantage declines with how much of the target's variance a periodic profile already explains, and the ordering across our three datasets initially appeared to confirm it. Tested properly, within a single dataset of \num{160} scored series where dataset identity is held fixed, the relationship is not distinguishable from zero. We state it as refuted in Section~\ref{sec:results} rather than retaining an ordering over three points, and Section~\ref{sec:discussion} explains why we now think the three-point version was close to circular in any case.
+
+\new{\paragraph{What is tested on real data and what is not.} Because the two halves of this paper rest on different evidence, we state the division once, here, in the plainest terms we can. The forecasting claims are tested on real data: two public datasets, room-level occupancy from an instrumented office building and station-level flow from a metro network, over \num{261} and \num{181} distinct rolling origins respectively. The reconciliation claims are not. The projection's mathematical properties are proved, and its empirical behaviour is measured only on our simulator, because no public dataset we could find reports occupancy and doorway flow for the same building on a common clock, which is exactly what a conservation constraint needs. No experiment in this paper reconciles real occupancy against real doorway flow from one building. Validating the reconciliation layer on such data is the single largest piece of future work, and Section~\ref{sec:limits} states what acquiring it would require. The title of this paper was changed in revision for the same reason: it previously named heritage museums, which no dataset here is, and it now names the two physical quantities the method couples.}
 
 \paragraph{Contributions.}
 \begin{enumerate}\itemsep2pt
 \item A formulation of indoor visitor flow forecasting as multivariate forecasting on a building graph, with node occupancy, signed edge flow and operational covariates, designed so that a general purpose forecaster applies without modification (Section~\ref{sec:formulation}).
-\item An uncertainty-weighted topology-constrained projection that makes any quantile forecaster physically admissible, with proofs of uniqueness, exact coherence and non-expansiveness towards an admissible truth, and a proposition deriving MinT as the special case that discards the inequality constraints, together with the measurement of it then violating them (Section~\ref{sec:method}).
-\item An evaluation of time series foundation models on room-level indoor occupancy, a setting absent from the standard zero-shot benchmarks, over \num{261} distinct rolling origins with paired Diebold-Mariano testing under Holm correction, and against a trained local competitor rather than trivial baselines alone (Section~\ref{sec:results}).
-\item Two negative results that bear on how such evaluations should be run: the comparison between a foundation model and a seasonal baseline is decided by context length, reversing between one and two seasonal periods of history; and our own pre-registered predictability hypothesis is refuted when tested within a dataset rather than across three (Sections~\ref{sec:hypotheses} and~\ref{sec:results}).
-\item An open simulated heritage museum benchmark with full ground truth on every doorway, plus the reconciliation layer and a harness in which every artefact is traceable to a logged run.
+\item An uncertainty-weighted topology-constrained projection that makes any quantile forecaster physically admissible, with proofs of uniqueness, exact coherence and non-expansiveness towards an admissible truth, and a proposition deriving MinT as the special case that discards the inequality constraints, together with the measurement of it then violating them (Section~\ref{sec:method}). \new{Its empirical evaluation is on simulated data only, for the reason stated above.}
+\item An evaluation of time series foundation models on \new{real} room-level indoor occupancy, a setting absent from the standard zero-shot benchmarks, over \num{261} distinct rolling origins with paired Diebold-Mariano testing under Holm correction, and against \new{a local competitor specified as strongly as we could afford to make it: seasonal lags, tuned hyper-parameters and a per-series fit, rather than trivial baselines alone (Sections~\ref{sec:results} and~\ref{sec:lgbm})}.
+\item \new{Three} negative results that bear on how such evaluations should be run: the comparison between a foundation model and a seasonal baseline is decided by context length, reversing between one and two seasonal periods of history\new{; the comparison against a trained local model is decided by how that model is specified, reversing on one of two sites once seasonal lags and a per-series fit are supplied}; and our own \new{a priori} predictability hypothesis is refuted when tested within a dataset rather than across three (Sections~\ref{sec:hypotheses} and~\ref{sec:results}).
+\item An open simulated \new{museum-like building} benchmark with full ground truth on every doorway, plus the reconciliation layer and a harness in which every artefact is traceable to a logged run.
+\item \new{An explicit statement of the evidential boundary of the work, which a reviewer asked us to make unmissable. The forecasting contribution and the reconciliation contribution are evaluated on different datasets. The forecasting comparisons use the two real datasets and never use the simulator. The reconciliation comparisons use the simulator and never use real data. No experiment reported here reconciles real occupancy against real doorway flow measured in the same building, because we are not aware of a public dataset that provides both, and the end-to-end pipeline is therefore demonstrated rather than validated (Section~\ref{sec:limits}).}
 \end{enumerate}
 
 %=============================================================================
@@ -149,7 +164,13 @@ o_v(t) - o_v(t-1) - \sum_{e \in \mathrm{in}(v)} f_e(t) + \sum_{e \in \mathrm{out
 \qquad \forall v \in V_{\mathrm{int}}.
 \label{eq:conservation}
 \end{equation}
-Equation~\eqref{eq:conservation} is the discrete continuity equation and is the single structural fact separating this problem from a generic collection of correlated series. It is exact by construction, not an approximation: it holds for the true counts whenever the sampling interval is short enough that no visitor traverses two doorways within one step, a condition satisfied at the one to five minute resolutions used here.
+Equation~\eqref{eq:conservation} is the discrete continuity equation and is the single structural fact separating this problem from a generic collection of correlated series. \new{It is an accounting identity rather than a model, and it is worth being exact about what it does and does not require, because the submitted version named the wrong condition. We previously wrote that~\eqref{eq:conservation} holds whenever no visitor traverses two doorways within one step. That is not the operative assumption, and a reviewer was right to question it: a visitor who crosses from the parlour to the dining room and on to the stair within a single interval increments all the edges she crosses and the balance still closes at each node, because her departure from the parlour and her arrival at the stair are both counted. Multiple crossings per interval are therefore harmless. What~\eqref{eq:conservation} does require is three things:}
+\new{\begin{enumerate}
+\item \emph{Complete observation of the boundary.} Every path between the interior and the exterior passes through a counted edge. This is why the virtual node $v_{\mathrm{out}}$ is introduced and why fire exits and staff doors must be instrumented or sealed; an uncounted opening is an unmodelled source term.
+\item \emph{A common clock.} All node and edge series are aggregated to the same interval boundaries, so that a crossing and the occupancy change it causes are assigned to the same $t$. A crossing recorded in interval $t$ whose occupancy effect lands in $t+1$ breaks the balance by one person.
+\item \emph{A fixed system boundary and conserved population.} Visitors are neither created nor destroyed in the interior, which excludes periods when the counted population changes for reasons outside the graph.
+\end{enumerate}}
+\new{Under these three conditions~\eqref{eq:conservation} is exact for the true counts at any interval length, and the one to five minute resolutions used here are chosen for forecasting relevance rather than to make the identity hold. The conditions do fail for measured data, which is the subject of Remark~\ref{rem:admissible}, and they hold by construction in the simulator, which is why the reconciliation evidence is confined to it.}
 
 \subsection{Forecast target and the admissible set}
 
@@ -164,24 +185,25 @@ Applying~\eqref{eq:conservation} at every interior node and every step gives $|V
 \end{equation}
 where $\bA$ carries the node-edge incidence structure and the coupling between consecutive steps, and $\bb$ is zero except in the rows for $h=1$, which absorb the last observed occupancies $o_v(t_0)$. The anchor is the only place observed data enters the constraint, and it is observed strictly before the origin, so the constraint leaks nothing about the evaluation window.
 
-Counts are non-negative and rooms have finite capacity $c_v$, so the admissible set is
+Counts are non-negative, rooms have finite capacity $c_v$, \new{and doorways have finite throughput}. \new{Each doorway $e$ carries a throughput $\kappa_e$ in persons per minute, declared alongside its clear width $w_e$ in the site description and fixed by the geometry of the opening rather than estimated from the data, so over an interval of $\Delta$ minutes at most $\kappa_e \Delta$ crossings are possible.} The admissible set is therefore
 \begin{equation}
 \cY \;=\; \left\{ \by \in \Rb^m \;:\; \bA\by = \bb, \;\; \bm{l} \le \by \le \bm{u} \right\},
 \qquad
 l_i = 0, \quad
-u_i = \begin{cases} c_{v(i)} & \text{$i$ an occupancy coordinate},\\ +\infty & \text{$i$ a flow coordinate}.\end{cases}
+u_i = \begin{cases} c_{v(i)} & \text{$i$ an occupancy coordinate},\\ \new{\kappa_{e(i)}\,\Delta} & \text{$i$ a flow coordinate}.\end{cases}
 \label{eq:admissible}
 \end{equation}
+\new{A reviewer of the submitted version observed, correctly, that writing $u_i = +\infty$ on the flow coordinates contradicted the claim that $\cY$ is bounded, and noted the concrete consequence: a directed cycle of rooms admits arbitrarily large circulation at zero net cost to the balance equations, so with unbounded flow the admissible set contains a line and the projection, while still unique, cannot be said to live in a compact region. The resolution is that~\eqref{eq:admissible} as implemented always carried the throughput bound; the submitted equation misreported the software. Every number in this paper, in the submitted version and in this one, was produced with finite flow bounds. We record the magnitudes so that the claim is checkable: on the simulated site the flow upper bounds lie between \num{14} and \num{50} crossings per interval and the occupancy bounds between \num{10} and \num{30} persons.}
 
 \begin{proposition}[Structure of $\cY$]
 \label{prop:convex}
-$\cY$ is a closed convex set. It is non-empty whenever the anchor is itself admissible, that is $0 \le o_v(t_0) \le c_v$ for all $v \in V_{\mathrm{int}}$.
+$\cY$ is a \new{compact} convex set. It is non-empty whenever the anchor is itself admissible, that is $0 \le o_v(t_0) \le c_v$ for all $v \in V_{\mathrm{int}}$.
 \end{proposition}
 \begin{proof}
-$\cY$ is an intersection of the affine set $\{\bA\by = \bb\}$ with the box $[\bm{l},\bm{u}]$, both closed and convex, so $\cY$ is closed and convex. For non-emptiness, take $\by^{0}$ with all flow coordinates zero and all occupancy coordinates equal to the anchor, $o_v(t_0+h) = o_v(t_0)$ for every $h$. Every balance in~\eqref{eq:conservation} then reads $o_v(t_0)-o_v(t_0)-0+0=0$, which holds, and $\by^{0}$ lies in the box by the assumption on the anchor. Hence $\by^{0} \in \cY$.
+$\cY$ is an intersection of the affine set $\{\bA\by = \bb\}$ with the box $[\bm{l},\bm{u}]$, both closed and convex, so $\cY$ is closed and convex. \new{With $u_i$ finite on every coordinate the box is bounded, hence $\cY$ is bounded, and a closed bounded subset of $\Rb^m$ is compact.} For non-emptiness, take $\by^{0}$ with all flow coordinates zero and all occupancy coordinates equal to the anchor, $o_v(t_0+h) = o_v(t_0)$ for every $h$. Every balance in~\eqref{eq:conservation} then reads $o_v(t_0)-o_v(t_0)-0+0=0$, which holds, and $\by^{0}$ lies in the box by the assumption on the anchor. Hence $\by^{0} \in \cY$.
 \end{proof}
 
-Proposition~\ref{prop:convex} matters operationally: the "nobody moves" forecast is always admissible, so the projection of Section~\ref{sec:method} can never be infeasible for a building whose observed occupancy is within capacity. We therefore never need a fallback that silently relaxes physics.
+Proposition~\ref{prop:convex} matters operationally: the ``nobody moves'' forecast is always admissible, so the projection of Section~\ref{sec:method} can never be infeasible for a building whose observed occupancy is within capacity. We therefore never need a fallback that silently relaxes physics. \new{Compactness is what rules out the circulating solution: a cycle of rooms can still carry flow that cancels in every balance, but the amount it can carry is capped by the doorway bounds, so no admissible forecast contains unbounded circulation. Note that compactness is not needed for Theorem~\ref{thm:unique}, whose proof uses only closedness, convexity and coercivity of the objective; it matters for interpreting $\cY$ as a set of physically realisable futures.}
 
 %=============================================================================
 \section{Topology-constrained reconciliation}
@@ -208,13 +230,20 @@ The design intent is that series the model is confident about are moved little, 
 
 \begin{theorem}[Existence, uniqueness and coherence]
 \label{thm:unique}
-Let $\cY \ne \emptyset$ and let $\sigma_i \ge \varepsilon > 0$ for all $i$. Then problem~\eqref{eq:qp} has a unique solution $\ytil$, and it satisfies $\bA\ytil = \bb$ and $\bm{l}\le\ytil\le\bm{u}$ exactly.
+Let $\cY \ne \emptyset$ and let \new{$\varepsilon \le \sigma_i \le \Sigma < \infty$} for all $i$. Then problem~\eqref{eq:qp} has a unique solution $\ytil$, and it satisfies $\bA\ytil = \bb$ and $\bm{l}\le\ytil\le\bm{u}$ exactly.
 \end{theorem}
 \begin{proof}
-Since $\sigma_i \ge \varepsilon$, we have $\bOm \succeq \varepsilon^{-2}\bm{I} \succ 0$, so the objective $\phi(\by) = (\by-\yhat)^{\top}\bOm(\by-\yhat)$ is strongly convex with modulus $2\varepsilon^{-2}$ and is coercive. By Proposition~\ref{prop:convex}, $\cY$ is non-empty, closed and convex. A coercive continuous function attains its infimum on a non-empty closed set, giving existence. For uniqueness, suppose $\by_1 \ne \by_2$ both attain the minimum $\phi^\star$. By convexity of $\cY$ their midpoint lies in $\cY$, and strong convexity gives
-$\phi\!\left(\tfrac{\by_1+\by_2}{2}\right) \le \tfrac{1}{2}\phi(\by_1) + \tfrac{1}{2}\phi(\by_2) - \tfrac{1}{4}\cdot 2\varepsilon^{-2}\|\by_1-\by_2\|_2^2 < \phi^\star$,
+\new{The eigenvalues of the diagonal matrix $\bOm$ are the numbers $\sigma_i^{-2}$. The hypothesis $\sigma_i \le \Sigma$ gives $\sigma_i^{-2} \ge \Sigma^{-2}$, hence}
+\new{\begin{equation}
+\Sigma^{-2}\bm{I} \;\preceq\; \bOm \;\preceq\; \varepsilon^{-2}\bm{I},
+\label{eq:omegabound}
+\end{equation}}
+\new{so $\bOm \succ 0$ and the objective $\phi(\by) = (\by-\yhat)^{\top}\bOm(\by-\yhat)$ is strongly convex with modulus $2\Sigma^{-2}$, the smallest eigenvalue being what strong convexity is governed by. The upper bound $\varepsilon^{-2}$ plays no role here; it records that $\bOm$ is finite, which is what the floor on $\sigma_i$ secures.} The objective is coercive. By Proposition~\ref{prop:convex}, $\cY$ is non-empty, closed and convex. A coercive continuous function attains its infimum on a non-empty closed set, giving existence. For uniqueness, suppose $\by_1 \ne \by_2$ both attain the minimum $\phi^\star$. By convexity of $\cY$ their midpoint lies in $\cY$, and strong convexity gives
+$\phi\!\left(\tfrac{\by_1+\by_2}{2}\right) \le \tfrac{1}{2}\phi(\by_1) + \tfrac{1}{2}\phi(\by_2) - \tfrac{1}{4}\cdot 2\new{\Sigma^{-2}}\|\by_1-\by_2\|_2^2 < \phi^\star$,
 contradicting minimality. Coherence and feasibility hold because $\ytil \in \cY$ by construction, and membership of $\cY$ is exactly the conjunction of $\bA\ytil=\bb$ and the box constraints.
 \end{proof}
+
+\new{The boundedness of $\sigma_i$ above is not an extra assumption in practice: the predictive quantiles of every model we evaluate are finite, so $\Sigma$ may be taken as the largest observed spread. We state it because the modulus of strong convexity depends on it, and only uniqueness, not existence or coherence, needs any bound at all.}
 
 Theorem~\ref{thm:unique} is what distinguishes a constraint from a penalty. A soft conservation loss added to a training objective yields forecasts that are approximately coherent by an amount nobody controls. Here the residual is zero up to solver tolerance, which we verify empirically in Section~\ref{sec:results} at $\num{4e-9}$ persons.
 
@@ -272,8 +301,23 @@ which is~\eqref{eq:contraction}. If $\yhat \notin \cY$ then $\ytil \ne \yhat$ an
 
 \begin{corollary}[Expected error reduction]
 \label{cor:expected}
-If the true future is admissible almost surely, then $\mathbb{E}\|\ytil-\by^{\star}\|_{\bOm}^{2} \le \mathbb{E}\|\yhat-\by^{\star}\|_{\bOm}^{2}$, with the gap equal to $\mathbb{E}\|\yhat-\ytil\|_{\bOm}^{2}$, the mean squared physical implausibility of the raw forecast.
+If the true future is admissible almost surely, then
+\begin{equation}
+\mathbb{E}\|\yhat-\by^{\star}\|_{\bOm}^{2} - \mathbb{E}\|\ytil-\by^{\star}\|_{\bOm}^{2}
+\;\new{\ge}\;
+\mathbb{E}\|\yhat-\ytil\|_{\bOm}^{2},
+\label{eq:expectedgain}
+\end{equation}
+so the expected error does not increase, and the expected squared correction distance $\mathbb{E}\|\yhat-\ytil\|_{\bOm}^{2}$, the mean squared physical implausibility of the raw forecast, is a \new{lower bound on} the expected gain.
 \end{corollary}
+\begin{proof}
+\new{Take expectations of~\eqref{eq:contraction} and rearrange. The direction of the inequality is preserved because expectation is monotone.}
+\end{proof}
+
+\begin{remark}[The bound is a bound, not an identity]
+\label{rem:notequality}
+\new{The submitted version of this corollary asserted that the gap \emph{equals} $\mathbb{E}\|\yhat-\ytil\|_{\bOm}^{2}$, which does not follow: Theorem~\ref{thm:contraction} supplies an inequality, and the slack is $2(\yhat-\ytil)^{\top}\bOm(\ytil-\by^{\star}) \ge 0$, which is zero only when the correction direction is $\bOm$-orthogonal to the direction from the projection to the truth. That happens for every $\by^{\star}$ when $\cY$ is an affine subspace, because then the variational inequality of Lemma~\ref{lem:vi} holds with equality, and it is why the identity is familiar from the purely hierarchical setting. With the box active it genuinely fails. A minimal instance: let $m=1$, $\cY = [0,\infty)$, $\bOm = 1$, $\yhat = -1$ and $\by^{\star} = 1$. Then $\ytil = 0$, the original squared error is $4$, the projected squared error is $1$, so the gain is $3$, while the squared correction distance is only $1$. The projection gains three times what the correction distance accounts for, so reporting the correction distance as the gain would understate it here and cannot be relied on in either direction as an estimate.}
+\end{remark}
 
 \begin{remark}[The hypothesis of Corollary~\ref{cor:expected} fails on real data]
 \label{rem:admissible}
@@ -291,11 +335,13 @@ Suppose the box in~\eqref{eq:admissible} is dropped, so $\cY_{\mathrm{eq}} = \{\
 \ytil = \yhat - \bm{W}\bA^{\top}\left(\bA\bm{W}\bA^{\top}\right)^{+}\left(\bA\yhat - \bb\right),
 \label{eq:mintform}
 \end{equation}
-which is a linear map of $\yhat$. In general $\ytil$ of~\eqref{eq:mintform} need not satisfy $\bm{l}\le\ytil\le\bm{u}$.
+which is an \new{affine} map of $\yhat$, \new{reducing to a linear one exactly when $\bb = \bm{0}$}. In general $\ytil$ of~\eqref{eq:mintform} need not satisfy $\bm{l}\le\ytil\le\bm{u}$.
 \end{proposition}
 \begin{proof}
-With equality constraints only, the Lagrangian is $\phi(\by) + 2\bm{\lambda}^{\top}(\bA\by-\bb)$ and stationarity gives $\bOm(\by-\yhat) + \bA^{\top}\bm{\lambda} = \bm{0}$, so $\by = \yhat - \bm{W}\bA^{\top}\bm{\lambda}$. Imposing $\bA\by=\bb$ gives $\bA\bm{W}\bA^{\top}\bm{\lambda} = \bA\yhat - \bb$, and substituting the minimum-norm solution $\bm{\lambda} = (\bA\bm{W}\bA^{\top})^{+}(\bA\yhat-\bb)$ yields~\eqref{eq:mintform}. Linearity is immediate. For the final claim it suffices to exhibit one instance: a single room with capacity $c$, anchor $o(t_0)=0$, and a raw forecast assigning a large positive inflow and zero occupancy. The correction distributes the imbalance along the occupancy coordinate without reference to $c$, and for a sufficiently large forecast inflow the reconciled occupancy exceeds $c$.
+With equality constraints only, the Lagrangian is $\phi(\by) + 2\bm{\lambda}^{\top}(\bA\by-\bb)$ and stationarity gives $\bOm(\by-\yhat) + \bA^{\top}\bm{\lambda} = \bm{0}$, so $\by = \yhat - \bm{W}\bA^{\top}\bm{\lambda}$. Imposing $\bA\by=\bb$ gives $\bA\bm{W}\bA^{\top}\bm{\lambda} = \bA\yhat - \bb$, and substituting the minimum-norm solution $\bm{\lambda} = (\bA\bm{W}\bA^{\top})^{+}(\bA\yhat-\bb)$ yields~\eqref{eq:mintform}. \new{Writing $\bm{G} = \bm{W}\bA^{\top}(\bA\bm{W}\bA^{\top})^{+}$, equation~\eqref{eq:mintform} reads $\ytil = (\bm{I}-\bm{G}\bA)\yhat + \bm{G}\bb$, which is affine in $\yhat$ with constant term $\bm{G}\bb$ and is linear precisely when $\bm{G}\bb = \bm{0}$, in particular when $\bb = \bm{0}$.} For the final claim it suffices to exhibit one instance: a single room with capacity $c$, anchor $o(t_0)=0$, and a raw forecast assigning a large positive inflow and zero occupancy. The correction distributes the imbalance along the occupancy coordinate without reference to $c$, and for a sufficiently large forecast inflow the reconciled occupancy exceeds $c$.
 \end{proof}
+
+\new{The distinction is not cosmetic in this application. In the classical hierarchical setting the coherence constraint is homogeneous, $\bA\by=\bm{0}$, because an aggregate is a fixed linear combination of its components and no external quantity enters. Here $\bb$ is non-zero in the rows for $h=1$, where it carries the last observed occupancies $o_v(t_0)$, so the reconciliation map has an intercept that moves with the state of the building. Lemma~\ref{lem:mintequiv} below is stated for the homogeneous case, which is the case in which the comparison with the published MinT map is meaningful.}
 
 Proposition~\ref{prop:mint} gives the projection form. That this is the same object as the familiar minimum trace map is a statement worth demonstrating rather than asserting, since the two are written so differently.
 
@@ -318,13 +364,45 @@ $\bm{M}$ is idempotent by direct substitution, and $\operatorname{range}\bm{M} =
 For the kernels, $\ker\bm{M} = \{\bm{x} : \bm{S}^{\top}\bm{W}^{-1}\bm{x} = \bm{0}\} = (\operatorname{range}\bm{W}^{-1}\bm{S})^{\perp}$, while $\ker\bm{\Pi} = \operatorname{range}\bm{W}\bA^{\top}$. Take $\bm{x} = \bm{W}\bA^{\top}\bm{z}$. Then $(\bm{W}^{-1}\bm{S})^{\top}\bm{x} = \bm{S}^{\top}\bA^{\top}\bm{z} = (\bA\bm{S})^{\top}\bm{z} = \bm{0}$, since $\operatorname{range}\bm{S} = \ker\bA$ gives $\bA\bm{S}=\bm{0}$. Hence $\operatorname{range}\bm{W}\bA^{\top} \subseteq (\operatorname{range}\bm{W}^{-1}\bm{S})^{\perp}$. The two subspaces have the same dimension, namely $\operatorname{rank}\bA = m - \operatorname{rank}\bm{S}$ on the left and $m - \operatorname{rank}(\bm{W}^{-1}\bm{S}) = m - \operatorname{rank}\bm{S}$ on the right, so the inclusion is an equality. Therefore $\bm{\Pi}$ and $\bm{M}$ agree.
 \end{proof}
 
-Lemma~\ref{lem:mintequiv} places the contribution precisely. Dropping the box recovers MinT exactly, not merely something resembling it, so the inequality constraints are the entire difference between the proposed method and the standard one, and any empirical separation between them is attributable to the box alone.
+Lemma~\ref{lem:mintequiv} places the contribution precisely. Dropping the box recovers MinT exactly, not merely something resembling it. \new{The submitted version drew a stronger conclusion than this warrants, asserting that the inequality constraints are therefore the entire difference between the proposed method and the standard one. Two reviewers objected, and they are right. The equivalence of Lemma~\ref{lem:mintequiv} holds \emph{at a fixed $\bm{W}$}, whereas the two methods as deployed differ in $\bm{W}$ as well: our $\bm{W} = \bOm^{-1}$ is diagonal with entries read from the predictive quantiles of the current forward pass by~\eqref{eq:sigma}, while MinT uses a full error covariance estimated from a rolling history of in-sample forecast errors, here by the Sch\"afer-Strimmer shrinkage estimator \citep{schafer2005} with equality constraints only. Comparing the proposed reconciler against MinT therefore changes the metric and the constraint set simultaneously, and attributing the difference to the box alone is not licensed.}
 
-Proposition~\ref{prop:mint} predicts a specific empirical failure. MinT will achieve coherence, because it enforces $\bA\by=\bb$ exactly, while producing forecasts that are physically impossible in a second sense, namely negative counts or occupancies above capacity. Section~\ref{sec:results} observes exactly this, at \num{1.74} persons of bound violation per origin. It also makes the cold start argument concrete: MinT needs $\bm{W}$, an error covariance that can only be estimated from a history of forecast errors at the site, whereas~\eqref{eq:sigma} reads the metric off a single forward pass and so keeps the pipeline genuinely zero-shot.
+\new{We correct this by adding a third arm that holds the metric fixed and removes only the box. Call it \emph{unbounded uncertainty}: it uses the same diagonal $\bOm$ of~\eqref{eq:sigma} but drops $\bm{l}\le\by\le\bm{u}$, so it is the closed form~\eqref{eq:mintform} with our weights. The three arms then decompose the difference into two separately identified effects,}
+\new{\begin{equation}
+\underbrace{\text{proposed} - \text{MinT}}_{\text{confounded}}
+\;=\;
+\underbrace{\text{proposed} - \text{unbounded uncertainty}}_{\text{effect of the box}}
+\;+\;
+\underbrace{\text{unbounded uncertainty} - \text{MinT}}_{\text{effect of the weighting matrix}},
+\label{eq:decomposition}
+\end{equation}}
+\new{and Table~\ref{tab:recon} reports both terms. This is also the comparison that answers the question of novelty honestly. Reconciliation subject to inequality constraints is not new: \citet{wickramasuriya2020nonneg} treat non-negativity and \citet{girolimetto2023} treat linear inequality constraints in general, and Theorems~\ref{thm:unique} and~\ref{thm:contraction} are the standard existence and non-expansiveness properties of a projection onto a closed convex set specialised to this set, not new mathematics. What is new here is the combination put to work: a constraint set read off a building graph rather than an aggregation hierarchy, a metric read off a foundation model's own predictive spread rather than estimated from site history, and a measurement of which of those two choices is doing the work.}
+
+Proposition~\ref{prop:mint} predicts a specific empirical failure. MinT will achieve coherence, because it enforces $\bA\by=\bb$ exactly, while producing forecasts that are physically impossible in a second sense, namely negative counts or occupancies above capacity. Section~\ref{sec:results} observes exactly this, at \new{\num{2.06}} persons of bound violation per origin\new{, and the unbounded uncertainty arm at \num{1.41} persons, confirming that the violation follows the missing box and not the choice of weights}. It also makes the cold start argument concrete: MinT needs $\bm{W}$, an error covariance that can only be estimated from a history of forecast errors at the site, whereas~\eqref{eq:sigma} reads the metric off a single forward pass and so keeps the pipeline genuinely zero-shot.
 
 \subsection{Quantile reconciliation and cost}
 
-The projection acts on the median. To keep the whole predictive distribution coherent we apply the \emph{shift} strategy, translating every quantile level of series $i$ and step $h$ by the correction applied to its median, $\tilde{y}^{(\alpha)}_{ih} = \hat{y}^{(\alpha)}_{ih} + (\tilde{y}^{(0.5)}_{ih} - \hat{y}^{(0.5)}_{ih})$. This preserves the interval widths and, because it is a common translation, preserves quantile ordering, so no crossing is introduced. It is the conservative choice: it changes location without asserting that the projection has taught us anything about spread.
+The projection acts on the median. The submitted version then wrote that the \emph{shift} strategy keeps ``the whole predictive distribution coherent'', and \new{that claim is false. Two reviewers identified it and we withdraw it. The correction here is worth stating precisely, because the error is easy to make and the corrected statement is still useful.}
+
+The shift strategy translates every quantile level of series $i$ and step $h$ by the correction applied to its median,
+\begin{equation}
+\tilde{y}^{(\alpha)}_{ih} = \hat{y}^{(\alpha)}_{ih} + c_{ih},
+\qquad
+c_{ih} = \tilde{y}^{(0.5)}_{ih} - \hat{y}^{(0.5)}_{ih}.
+\label{eq:shift}
+\end{equation}
+\new{Write $\bm{c}$ for the stacked corrections and $\by^{\alpha}$ for the stacked level-$\alpha$ forecasts, so that~\eqref{eq:shift} reads $\ytil^{\alpha} = \yhat^{\alpha} + \bm{c}$ with $\bm{c} = \ytil^{0.5} - \yhat^{0.5}$. Then}
+\new{\begin{equation}
+\bA\ytil^{\alpha} - \bb
+= \bA\yhat^{\alpha} + \bA\bm{c} - \bb
+= \bA\yhat^{\alpha} + \left(\bA\ytil^{0.5} - \bA\yhat^{0.5}\right) - \bb
+= \underbrace{\left(\bA\ytil^{0.5} - \bb\right)}_{=\,\bm{0}} + \bA\left(\yhat^{\alpha} - \yhat^{0.5}\right),
+\label{eq:shiftresidual}
+\end{equation}}
+\new{so the conservation residual at level $\alpha$ is $\bA(\yhat^{\alpha} - \yhat^{0.5})$, the image under $\bA$ of the raw fan's own spread about its median. This vanishes for every $\alpha$ only if the raw fan is a pure translation of its median, which no quantile head produces, and it is exactly zero at $\alpha = 0.5$. The shift therefore makes the median path coherent and leaves every other level incoherent by an amount it does not control. Bounds fare worse: a common translation can push a low level below zero or a high level above capacity even though the median satisfies both, so the shift does not even preserve feasibility away from the median.}
+
+\new{The experiments in Section~\ref{sec:results} quantify this rather than leaving it as an argument. We also implement the alternative, \emph{per quantile} reconciliation, which runs the projection~\eqref{eq:qp} separately at each of the nine levels. Each level is then individually coherent and individually feasible, and the residual drops by roughly an order of magnitude relative to the shift, but this buys less than it appears to: a collection of nine marginally coherent quantile paths is not a coherent joint predictive distribution, since nothing constrains the levels to be the quantiles of any single law, and independent projections can in principle reorder them, so the levels must be sorted afterwards. We measure the crossing rate and find it is zero on our data, but the conceptual gap remains.}
+
+\new{What survives, and what we now claim, is narrower than the submitted claim and is still the operationally relevant part: the projected median is exactly coherent and exactly feasible, and it is the median that drives the staffing and admission decisions the horizons are chosen for. A genuinely coherent predictive \emph{distribution} requires projecting sample paths rather than quantiles, in the manner of \citet{panagiotelis2023probabilistic} or the probabilistic framework of \citet{girolimetto2023}, and we leave it to future work rather than claiming it here.} The shift remains the default because it preserves the interval widths and quantile ordering by construction: it changes location without asserting that the projection has taught us anything about spread.
 
 Problem~\eqref{eq:qp} is a convex quadratic program with $m = nH$ variables and $k = |V_{\mathrm{int}}|H$ equalities. We solve it with OSQP \citep{osqp} through a DPP-compliant parameterised CVXPY \citep{cvxpy} problem that is built once and reused across origins, so the sparsity pattern is factorised a single time. Section~\ref{sec:results} measures a median of \SI{10.2}{\milli\second} per origin at $m=\num{1440}$, which is negligible beside the \SIrange{75}{676}{\milli\second} of the forecast itself.
 
@@ -355,6 +433,8 @@ A pre-trained foundation model, given no site-specific training, forecasts real 
 
 The inclusion of a trained competitor is deliberate. A zero-shot result established only against last value, seasonal naive and a time-of-day mean demonstrates that the models are better than nothing, which is not the claim anyone needs. We therefore run a gradient-boosted model with lag and calendar features, fitted on each site's own training split, as the arm that the hypothesis can actually fail against.
 
+\new{It did fail against it. A reviewer judged that a single globally trained gradient-boosted model was too weak a competitor to carry the weight the hypothesis placed on it, and asked for the training window, the lag set, the tuning protocol and the multi-horizon strategy to be disclosed and for a per-series variant to be added. We did all four, in Section~\ref{sec:lgbm}, and the resulting ladder of five progressively stronger specifications overturns the conclusion on one of the two real datasets: on HZMetro station flow a per-series gradient-boosted model reaches \num{0.511} MASE at two hours against \num{0.613} for the best zero-shot configuration, a \SI{28.9}{\percent} advantage to the local model that survives multiplicity control. Hypothesis~\ref{hyp:transfer} is therefore \textbf{falsified as stated}, since it required the foundation models to beat every local baseline on both real datasets. It survives on ROBOD, where the strongest local arm reaches \num{0.512} against \num{0.374} for Toto-2.0. We report the hypothesis as refuted and replace the general claim with the conditional one that the evidence supports, which is stated in Section~\ref{sec:disc}.}
+
 \begin{hypothesis}[The predictability boundary]
 \label{hyp:boundary}
 The zero-shot advantage over a seasonal baseline is a decreasing function of the daily seasonal strength of the target, measured \emph{within} a dataset so that dataset identity is held fixed. Regressing per-series advantage on per-series $S_m$ yields a negative slope distinguishable from zero.
@@ -365,11 +445,13 @@ Two features of Hypothesis~\ref{hyp:boundary} need stating plainly, because both
 
 \begin{hypothesis}[Sharper intervals at matched coverage]
 \label{hyp:uncertainty}
-Against baselines equipped with prediction intervals from their own training residuals, foundation models attain empirical coverage at least as close to nominal while producing substantially narrower intervals, and lower CRPS.
+Against baselines equipped with prediction intervals from their own training residuals, foundation models attain empirical coverage at least as close to nominal while producing substantially narrower intervals\new{, where width is compared after rescaling each method's interval to a common empirical coverage so that calibration and sharpness are not conflated}, and lower CRPS.
 \emph{Falsified if} an interval-equipped baseline matches the foundation models' coverage at comparable or smaller width, or leads on CRPS.
 \end{hypothesis}
 
 Hypothesis~\ref{hyp:uncertainty} is stated against a properly equipped competitor on purpose. A seasonal naive forecast reported with zero-width intervals will cover almost nothing, and observing that proves only that a point forecast is a point forecast. The baselines here therefore form their fans from the empirical quantiles of their own in-context residuals, which is standard practice, and the hypothesis is that the foundation models still win. Section~\ref{sec:protocol} records that getting this right turned out to constrain the experimental design, since a seasonal method given exactly one season of context has no residuals at all.
+
+\new{The comparison of widths has been put on a common footing relative to the submitted version, which reported raw widths beside raw coverages and then described the foundation models as the better calibrated. A reviewer pointed out that our own table refutes the calibration half of that: on ROBOD the seasonal baseline covered \SI{83.9}{\percent} of outcomes against a nominal \SI{80}{\percent} while Toto-2.0 covered \SI{90.1}{\percent}, so the baseline is the better calibrated of the two and the foundation model is merely sharper. Calibration and sharpness are distinct virtues and the submitted table conflated them. The hypothesis as now stated asks for coverage \emph{at least as close to nominal} together with narrower intervals, which is the conjunction that would actually matter, and Section~\ref{sec:calib} reports it as \textbf{partly refuted}: the sharpness claim holds decisively at matched coverage, the calibration claim does not hold.}
 
 \begin{hypothesis}[Topology-blindness is real and repairable]
 \label{hyp:coherence}
@@ -385,6 +467,8 @@ Weighting the projection by the model's own quantile spread, as in~\eqref{eq:sig
 
 Hypothesis~\ref{hyp:weights} is the sharpest test of the design, because both arms enforce identical constraints and reach identical coherence. They differ only in $\bOm$, so any difference in accuracy is attributable to the claim that the quantile spread carries genuine information about where the forecast is weak.
 
+\new{Both reconciliation hypotheses are tested on the simulator only, and we now say so in the hypotheses themselves rather than leaving it to be inferred. A reviewer asked that the division of evidence be made explicit at the point of each claim, and it is a real limitation rather than a presentational one: Hypotheses~\ref{hyp:transfer} to~\ref{hyp:uncertainty} are tested on two real datasets, Hypotheses~\ref{hyp:coherence} and~\ref{hyp:weights} on simulated data alone, and no dataset available to us supplies real room occupancy and real doorway flow in the same building at the same time, which is what a real test of reconciliation requires. Remark~\ref{rem:admissible} explains why this is not merely a gap in our data collection, and Section~\ref{sec:disc} states what would close it. In partial compensation we test the reconcilers at two operating points of the simulator rather than one, adding a crowded configuration in which room capacity binds on \SI{8.0}{\percent} of room-steps against \SI{2.7}{\percent} in the baseline configuration, because a reviewer observed that a reconciliation gain measured where the constraints are nearly inactive tells one very little about the regime the method is for.}
+
 %=============================================================================
 \section{Experimental setup}
 \label{sec:setup}
@@ -396,19 +480,21 @@ Claims about forecasting accuracy are made on real data. Claims about conservati
 
 \begin{table}[htbp]
 \centering
-\caption{Evaluation sites. $S_m$ is the daily seasonal strength of Definition~\ref{def:strength}, given as the mean over series with the standard error of that mean. Origins are distinct scored origins after the eligibility filter of Section~\ref{sec:protocol}, not pooled over seeds; the range on HZMetro is across horizons.}
+\caption{Evaluation sites. $S_m$ is the daily seasonal strength of Definition~\ref{def:strength}, given as the mean over series with the standard error of that mean. Origins are distinct scored origins after the eligibility filter of Section~\ref{sec:protocol}, not pooled over seeds; the range on HZMetro is across horizons. \new{Two series counts are given because they differ and the submitted table reported only the first: \emph{panel} is the number of series the model is given and the reconciler constrains, \emph{scored} is the number entering the accuracy tables and the within-dataset regression of Hypothesis~\ref{hyp:boundary}.}}
 \label{tab:data}
 \small
-\begin{tabular}{llrrrrl}
+\begin{tabular}{llrrrrrl}
 \toprule
-Site & Target & Series & Interval & Origins & $S_m$ & Provenance \\
+Site & Target & \new{Panel} & \new{Scored} & Interval & Origins & $S_m$ & Provenance \\
 \midrule
-ROBOD    & room occupancy  & 5   & \SI{5}{\minute}  & 261 & $0.44 \pm 0.12$ & \citet{tekler2022robod} \\
-HZMetro  & station flow    & 240 & \SI{15}{\minute} & 181--196 & $0.79 \pm 0.004$ & \citet{liu2022pvcgn} \\
-Simulated & occupancy and flow & 24 & \SI{1}{\minute} & 300 & $0.55 \pm 0.06$ & this work \\
+ROBOD    & room occupancy  & \new{15} & \new{5}   & \SI{5}{\minute}  & 261 & $0.44 \pm 0.12$ & \citet{tekler2022robod} \\
+HZMetro  & station flow    & \new{240} & \new{160} & \SI{15}{\minute} & 181--196 & $0.79 \pm 0.004$ & \citet{liu2022pvcgn} \\
+Simulated & occupancy and flow & \new{24} & \new{24} & \SI{1}{\minute} & 300 & $0.55 \pm 0.06$ & this work \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+\new{Two reviewers asked why Table~\ref{tab:data} said \num{240} HZMetro series while Figure~\ref{fig:within} regresses over \num{160}, and the answer is that both numbers are right and the submitted table reported only one of them. HZMetro has \num{80} stations. Each station contributes one inflow and one outflow series, giving \num{160} directional flow series, and the panel handed to the forecaster additionally carries the \num{80} station occupancy series implied by the inflow minus outflow balance, for \num{240} in total. The flow series are the forecast target and the \num{160} scored series; the occupancy series exist so that the continuity equation~\eqref{eq:conservation} has an occupancy coordinate to anchor, and they are not scored because HZMetro provides no independent occupancy ground truth to score them against. The same distinction applies to ROBOD, where the panel is \num{15} series and \num{5} are scored room occupancies, and the submitted table reported the scored count there and the panel count for HZMetro, which is the inconsistency the reviewers detected. Table~\ref{tab:data} now reports both for every site.}
 
 \textbf{ROBOD} \citep{tekler2022robod} gives room-level ground truth occupancy counts in an instrumented office building alongside environmental signals, at five minute resolution. It is the closest public analogue to a gallery: an indoor space, counted directly, with occupancy that is bounded, frequently zero, and driven by events that are not purely periodic. The record is gappy, which we handle by the origin eligibility filter rather than by imputation.
 
@@ -445,6 +531,7 @@ Every method here except LightGBM is deterministic. We verified this rather than
 Origins are dropped when the context or the target window is unobserved, which matters on ROBOD, where the record is gappy, and on HZMetro, where the overnight closure removes roughly a fifth of the nominal grid. HZMetro enumerates \num{196} distinct origins in total, of which \num{181} are scorable at \SI{15}{\minute} and all \num{196} at \SI{120}{\minute}. The count rises with horizon rather than falling because the reported metric at horizon $h$ aggregates steps $1$ through $h$: an origin whose first step lands in the overnight gap but whose later steps do not contributes to the longer windows and not to the shorter ones. Dropping is recorded rather than imputed, since imputing the target would manufacture the very agreement we are testing.
 
 \subsection{Metrics and inference}
+\label{sec:metrics}
 
 We report MAE and RMSE, MASE against a seasonal naive denominator computed on the \emph{training} window only, CRPS and weighted quantile loss approximated from the nine quantiles, empirical coverage of the nominal \SI{80}{\percent} interval with its width, conservation residual and violation rate, and latency and peak memory.
 
@@ -460,8 +547,9 @@ Every run writes a manifest recording the git commit, a hash of the resolved con
 %=============================================================================
 
 \subsection{H1: zero-shot transfer to real buildings and networks}
+\label{sec:h1}
 
-Tables~\ref{tab:robod} and~\ref{tab:hzmetro} report the two real datasets. On both, every foundation model configuration beats every local baseline over the horizon range the hypothesis names, including the baseline trained on the site's own history.
+Tables~\ref{tab:robod} and~\ref{tab:hzmetro} report the two real datasets. \new{The submitted version opened this section by stating that on both datasets every foundation model configuration beats every local baseline over the horizon range the hypothesis names. A reviewer observed that our own Table~\ref{tab:robod} contradicts that sentence, and it does: at \SI{5}{\minute} on ROBOD, last value records \num{0.164} MASE against \num{0.186} for the best foundation model. The sentence was wrong and is withdrawn. The accurate statement is that the foundation models lead at every horizon from \SI{15}{\minute} onwards, and that at the shortest horizon on ROBOD persistence is better, for the reason given below. Section~\ref{sec:lgbm} then shows that the claim fails against a properly specified local competitor on HZMetro at every horizon, which is the more serious of the two corrections.}
 
 \begin{table}[htbp]
 \centering
@@ -493,7 +581,7 @@ On ROBOD, Toto-2.0 reaches \num{0.374} MASE at \SI{60}{\minute} against \num{0.5
 
 The horizon dependence is the informative part, and Figure~\ref{fig:skill} shows it. At \SI{5}{\minute} the best forecast of room occupancy is simply its current value, and no foundation model beats it: persistence is unbeatable while the signal has not yet had time to change. The foundation models overtake between \SI{5}{\minute} and \SI{15}{\minute} and the gap widens monotonically thereafter, because persistence degrades as the autocorrelation decays while the pre-trained models continue to extract structure. This is the operationally relevant regime, since a museum needs the lead time to redirect visitors or open a second route, which is tens of minutes rather than five.
 
-The trained competitor deserves comment, because its failure is informative rather than a sign that it was handicapped. LightGBM is fitted globally across series on each site's training split with lag and calendar features, and it is beaten at every horizon on both datasets, decisively so at long horizons. On ROBOD it does not even reach last value. The reason is visible in the data rather than in the model: ROBOD's usable record is a few weeks of weekday blocks with a two-month hole, which is enough to fit a model and not enough to fit a good one. That is precisely the cold start the paper is about, and it is the condition under which a zero-shot model should be expected to win.
+\new{The trained competitor in Tables~\ref{tab:robod} and~\ref{tab:hzmetro} is the single globally trained gradient-boosted model of the submitted version, retained here so that the comparison with the submitted numbers is transparent. The submitted text went on to explain its weakness by the shortness of the records, and concluded that this was ``precisely the cold start the paper is about''. That explanation was asserted rather than tested, and a reviewer was right to say so: the specification of a gradient-boosted model, its lag set, its tuning and its multi-horizon strategy are all confounded with the quantity of data available to it, and the submitted design varied none of them. Section~\ref{sec:lgbm} varies all four and Section~\ref{sec:efficiency} varies the quantity of data directly. The explanation does not survive. Specification accounts for most of the gap and data quantity for very little, and once the specification is fixed the local model wins on HZMetro. We retract the cold-start explanation of this particular result and the claim that the local model fails to reach last value on ROBOD.}
 
 \begin{figure}[htbp]
 \centering
@@ -506,11 +594,11 @@ The trained competitor deserves comment, because its failure is informative rath
 \includegraphics[width=\linewidth]{figures/skill_hzmetro.png}
 \caption{HZMetro, $S_m=0.79$.}
 \end{subfigure}
-\caption{Accuracy against horizon on the two real datasets, with a context of two daily seasons. The foundation models separate from every local baseline on both, and the separation widens with horizon. The dotted line at MASE \num{1} is the in-sample seasonal naive reference. Table~\ref{tab:context} shows how much of the right-hand panel depends on the context length.}
+\caption{Accuracy against horizon on the two real datasets, with a context of two daily seasons. \new{The foundation models separate from every trivial baseline on both sites, and the separation widens with horizon. The overlaid black line is the per-series gradient-boosted competitor of Section~\ref{sec:lgbm}, which the submitted version of this figure did not include: it stays behind on ROBOD and overtakes the foundation models on HZMetro, which is why the transferability claim is now stated per site rather than as a dominance result.} The dotted line at MASE \num{1} is the in-sample seasonal naive reference. Table~\ref{tab:context} shows how much of the right-hand panel depends on the context length.}
 \label{fig:skill}
 \end{figure}
 
-Table~\ref{tab:hzmetro} reports HZMetro, where the panel is larger and the tests correspondingly sharper. TimesFM-3 attains \num{0.536} MASE at \SI{15}{\minute} against \num{0.764} for seasonal naive, an improvement of \SI{29.8}{\percent}, and all four foundation model configurations beat the seasonal baseline significantly at \SI{15}{\minute} under Holm control, three of them at \SI{30}{\minute}. Beyond one hour the improvements remain in the range \SIrange{16}{19}{\percent} but are no longer significant at \num{186} and \num{196} origins. The trained LightGBM does not beat the seasonal baseline at any horizon. Hypothesis~\ref{hyp:transfer} is supported.
+Table~\ref{tab:hzmetro} reports HZMetro, where the panel is larger and the tests correspondingly sharper. TimesFM-3 attains \num{0.536} MASE at \SI{15}{\minute} against \num{0.764} for seasonal naive, an improvement of \SI{29.8}{\percent}, and all four foundation model configurations beat the seasonal baseline significantly at \SI{15}{\minute} under Holm control, three of them at \SI{30}{\minute}. Beyond one hour the improvements remain in the range \SIrange{16}{19}{\percent} but are no longer significant at \num{186} and \num{196} origins. \new{The submitted version concluded here that Hypothesis~\ref{hyp:transfer} is supported. It is not. Against the gradient-boosted ladder of Section~\ref{sec:lgbm} the hypothesis fails on this dataset, and we record it as refuted.}
 
 \begin{table}[htbp]
 \centering
@@ -537,6 +625,61 @@ Last value              & 0.901 & 1.098 & 1.484 & 2.015 & 30.16 & 37.52 & 52.06 
 \bottomrule
 \end{tabular}
 \end{table}
+
+\subsection{\new{How much of H1 was the competitor's specification?}}
+\label{sec:lgbm}
+
+\new{A reviewer judged that a single globally trained gradient-boosted model, reported without its training window, lag set, tuning protocol or multi-horizon strategy, was too weak and too undocumented a competitor for Hypothesis~\ref{hyp:transfer} to rest on, and asked for a per-series or direct multi-horizon variant. We agree, and this section is the result. It is the single most consequential change in the revision, because it overturns the paper's headline claim on one of the two real datasets.}
+
+\new{We first disclose the submitted configuration, which Table~\ref{tab:lgbm} calls \emph{as submitted}. One LightGBM model is fitted across all series of a site on the whole training split, with lags $\{1,2,3,5,10,15,30,60,120\}$ steps, rolling means and standard deviations over windows $\{5,15,60\}$, and calendar features for time of day, day of week and a weekend indicator. Hyperparameters are the library defaults with \num{31} leaves, learning rate \num{0.05} and \num{300} trees. Multi-horizon forecasts come from one model per step trained on a fixed subset of steps, with intermediate steps interpolated. Quantiles come from nine separate pinball objectives. Nothing in that specification is tailored to a daily or weekly period, and nothing is tuned.}
+
+\new{We then build a ladder of four increasingly careful specifications, each adding exactly one change so that the contributions are separable.}
+\new{\begin{description}
+\item[Horizon matched.] A separate model for every forecast step up to the maximum horizon, removing the interpolation across steps.
+\item[Seasonal lags.] Adds lags at the daily period and its neighbours, $\{m-1, m, m+1, 2m\}$, and at the weekly period $\{7m-1, 7m, 7m+1\}$, where $m$ is the number of steps in a day. On HZMetro at fifteen minutes this adds lags \num{95}, \num{96}, \num{97}, \num{192}, \num{671}, \num{672} and \num{673}. The submitted feature set reached back \num{120} steps, which on HZMetro is \SI{30}{\hour} and therefore could not see the previous day at the same time of day at all.
+\item[Tuned.] A grid of six configurations over the number of leaves, the learning rate, the number of trees and the minimum leaf occupancy, selected by median pinball loss on the final fifth of the training design matrix, which is held out from fitting. Selection never touches the test split.
+\item[Per series.] One model per series rather than one model across series, with the tuned configuration and the seasonal lag set.
+\end{description}}
+
+\new{\begin{table}[htbp]
+\centering
+\caption{\new{The gradient-boosted ladder, MASE, lower better. Each row adds one change to the row above it within the LightGBM block. The strongest zero-shot configuration for each dataset and the strongest untrained baseline are shown for reference. Identical origins, context, stride and horizon grid as Tables~\ref{tab:robod} and~\ref{tab:hzmetro}.}}
+\label{tab:lgbm}
+\small
+\begin{tabular}{lcccc}
+\toprule
+\multicolumn{5}{l}{\emph{(a) HZMetro, station flow, \num{196} origins}}\\
+Method & \SI{15}{\minute} & \SI{30}{\minute} & \SI{60}{\minute} & \SI{120}{\minute} \\
+\midrule
+LightGBM, as submitted      & 0.792 & 0.873 & 1.006 & 1.135 \\
+\quad + horizon matched     & 0.719 & 0.771 & 0.867 & 0.996 \\
+\quad + seasonal lags       & 0.635 & 0.640 & 0.735 & 0.899 \\
+\quad + tuned               & 0.581 & 0.587 & 0.673 & 0.805 \\
+\quad + per series          & \best{0.493} & \best{0.504} & \best{0.506} & \best{0.511} \\
+\midrule
+TimesFM-3 (uv), zero-shot   & 0.536 & 0.556 & 0.588 & 0.613 \\
+Seasonal naive              & 0.764 & 0.772 & 0.757 & 0.731 \\
+\midrule
+\multicolumn{5}{l}{\emph{(b) ROBOD, room occupancy, \num{261} origins}}\\
+Method & \SI{5}{\minute} & \SI{15}{\minute} & \SI{30}{\minute} & \SI{60}{\minute} \\
+\midrule
+LightGBM, as submitted      & 0.263 & 0.439 & 0.517 & 0.601 \\
+\quad + horizon matched     & 0.231 & 0.406 & 0.480 & 0.550 \\
+\quad + seasonal lags       & 0.237 & 0.411 & 0.487 & 0.556 \\
+\quad + tuned               & 0.226 & 0.403 & 0.481 & 0.551 \\
+\quad + per series          & 0.278 & 0.407 & 0.460 & 0.512 \\
+\midrule
+Toto-2.0, zero-shot         & 0.186 & \best{0.294} & \best{0.328} & \best{0.374} \\
+Last value                  & \best{0.164} & 0.361 & 0.449 & 0.538 \\
+\bottomrule
+\end{tabular}
+\end{table}}
+
+\new{\paragraph{On HZMetro the hypothesis fails.} The ladder at two hours runs \num{1.135}, \num{0.996}, \num{0.899}, \num{0.805}, \num{0.511}, so re-specification cuts the error by more than half. The per-series arm reaches \num{0.511} against \num{0.613} for the best zero-shot configuration, a \SI{28.9}{\percent} advantage to the local model, and it leads at every one of the four horizons. The advantage carries $p=\num{1.4e-2}$ and survives Holm control across the comparisons at that horizon. We checked for leakage rather than assuming its absence, since a local model that suddenly beats a foundation model is exactly the situation in which one should look: the training split ends at step \num{1896}, the test split starts at \num{1904} with a gap of eight steps equal to the longest horizon, and the first scored origin is \num{1914}, so no training row can contain a test observation. The result stands. The largest single step in the ladder is the per-series one, which is consistent with the obvious reading: \num{160} metro flow series with strong but station-specific daily profiles are better served by \num{160} small models than by one model asked to represent all of them, and the submitted global arm was the wrong shape for this dataset rather than merely untuned.}
+
+\new{\paragraph{On ROBOD the hypothesis survives.} The same ladder moves the error from \num{0.601} to \num{0.512} at one hour, an improvement of \SI{14.8}{\percent}, which is real but leaves Toto-2.0 at \num{0.374} ahead by \SI{26.8}{\percent}. Two things are worth recording. The per-series arm now beats last value, \num{0.512} against \num{0.538}, so the submitted sentence that the trained model ``does not even reach last value'' is withdrawn; it was an artefact of the specification. And the margin over the best local arm, while large, no longer survives Holm control at $\alpha = 0.05$ on \num{261} origins, which is consistent with what Section~\ref{sec:h1} already said about the inferential power of this dataset.}
+
+\new{\paragraph{What we conclude instead.} The honest summary is that the zero-shot advantage is real but conditional, and that the condition is not the one the submitted paper proposed. It is not primarily about how much local data exists, as Section~\ref{sec:efficiency} shows directly. It is about whether the local model has been given the right shape for the target: a specification that matches the series' own periodicity and granularity closes most of the gap, and on a large, strongly periodic, station-level panel it closes all of it and more. The claim that survives is the one in Section~\ref{sec:disc}, and it is narrower.}
 
 \subsection{The comparison is decided by context length}
 \label{sec:context}
@@ -567,15 +710,59 @@ Last value         & 0.901 & 1.098 & 1.484 & 2.015 & 0.901 & 1.098 & 1.484 & 2.0
 
 At one season the seasonal baseline beats every foundation model at every horizon beyond \SI{15}{\minute}, and at \SI{120}{\minute} it beats the best of them by \SI{25}{\percent}. At two seasons the same models beat it by \SI{16}{\percent}. Chronos-2 improves by a factor of \num{2.6} at the longest horizon. Nothing about the task changed: the origins, the truth, the metric and the seasonal denominator are identical, and last value is numerically unchanged because it reads a single point.
 
+\new{\paragraph{Does the improvement continue, saturate or reverse?} Two reviewers observed that two context lengths on one dataset cannot answer this, and that the submitted conclusion therefore rested on the narrowest possible evidence. One also noted that the local baselines were given at most two days of context while the metro has pronounced weekly seasonality, so the seasonal baseline was the daily one throughout and a weekly baseline was never run. Both are fair and Table~\ref{tab:sweep} answers them. We ran the full protocol at one, two, three, seven and fourteen daily seasons of context on both real datasets, and added a weekly seasonal baseline wherever the context is long enough to define one, which requires at least fourteen daily seasons.}
+
+\new{\begin{table}[htbp]
+\centering
+\caption{\new{The context sweep. MASE at the longest horizon of each dataset, \SI{120}{\minute} on HZMetro and \SI{60}{\minute} on ROBOD, against context length in daily seasons. Origins are held common across all five contexts: all \num{196} on HZMetro and the \num{261} shared by every context on ROBOD, so each row is a paired comparison. The weekly seasonal baseline is defined only at fourteen daily seasons, which is the shortest context containing two weekly periods.}}
+\label{tab:sweep}
+\small
+\begin{tabular}{lccccc}
+\toprule
+& \multicolumn{5}{c}{context length, in daily seasons}\\
+\cmidrule(lr){2-6}
+Method & 1 & 2 & 3 & 7 & 14 \\
+\midrule
+\multicolumn{6}{l}{\emph{(a) HZMetro, station flow, \SI{120}{\minute}, \num{196} common origins}}\\
+TimesFM-3 (uv)         & 1.037 & 0.677 & 0.557 & 0.424 & \best{0.414} \\
+TimesFM-3 (mv)         & 1.042 & 0.665 & 0.584 & 0.448 & 0.433 \\
+Chronos-2 (mv)         & 2.214 & 0.827 & 0.673 & 0.470 & 0.426 \\
+Toto-2.0               & 1.842 & 0.919 & 0.788 & 0.656 & 0.593 \\
+\midrule
+Seasonal naive (daily) & 0.774 & 0.781 & 0.777 & 0.774 & 0.774 \\
+\new{Seasonal naive (weekly)} & n/a & n/a & n/a & n/a & 0.598 \\
+Historical average     & 0.924 & 0.900 & 0.601 & 0.487 & 0.541 \\
+Last value             & 2.155 & 2.155 & 2.155 & 2.155 & 2.155 \\
+\midrule
+\multicolumn{6}{l}{\emph{(b) ROBOD, room occupancy, \SI{60}{\minute}, \num{261} common origins}}\\
+Toto-2.0               & 0.454 & 0.374 & 0.358 & 0.310 & \best{0.309} \\
+TimesFM-3 (mv)         & 0.508 & 0.409 & 0.389 & 0.315 & 0.314 \\
+TimesFM-3 (uv)         & 0.476 & 0.413 & 0.406 & 0.336 & 0.332 \\
+Chronos-2 (mv)         & 0.470 & 0.412 & 0.392 & 0.348 & 0.346 \\
+\midrule
+Seasonal naive (daily) & 0.761 & 0.814 & 0.761 & 0.761 & 0.761 \\
+\new{Seasonal naive (weekly)} & n/a & n/a & n/a & n/a & 0.887 \\
+Historical average     & 0.818 & 0.749 & 0.618 & 0.650 & 0.745 \\
+Last value             & 0.529 & 0.529 & 0.529 & 0.529 & 0.529 \\
+\bottomrule
+\end{tabular}
+\end{table}}
+
+\new{The answer is that the improvement continues well past two seasons and then saturates, and that it never reverses. On HZMetro the best configuration runs \num{1.037}, \num{0.677}, \num{0.557}, \num{0.424}, \num{0.414} as the context grows, reaching within \SI{2.5}{\percent} of its final value by seven daily seasons; on ROBOD the pattern is the same shape, \num{0.454}, \num{0.374}, \num{0.358}, \num{0.310}, \num{0.309}. The submitted paper's two-point comparison therefore caught the steepest part of a curve and stopped, and the choice of two seasons, which we had defended as adequate, in fact left about two fifths of the available improvement unused. The qualitative conclusion is unchanged and the quantitative one is stronger than we claimed. Throughout, the baselines that read only the last observation are flat to four decimal places and the daily seasonal baseline moves by less than \SI{1}{\percent}, so the task itself is unchanged across the sweep, which is the control that makes the comparison interpretable. The one non-monotone row is historical average, which improves to three seasons and then degrades, as a time-of-day mean over a longer window begins to average across genuinely different days.}
+
+\new{\paragraph{The weekly baseline is a much stronger competitor, and still loses.} On HZMetro a weekly seasonal naive forecast reaches \num{0.598} MASE against \num{0.774} for the daily one, an improvement of \SI{22.7}{\percent}, which confirms the reviewer's point that restricting the baselines to a daily lag understated them. It remains \SI{30.8}{\percent} behind the best zero-shot configuration at the same context. On ROBOD the weekly baseline is \emph{worse} than the daily one, \num{0.887} against \num{0.761}, which is what one should expect given that ROBOD's usable record is a sequence of weekday blocks interrupted by a two-month gap, so the observation one week earlier is frequently missing or drawn from a different occupancy regime. We report both because the contrast is informative: the weekly baseline is the right competitor on a metro network and the wrong one on this building, and a paper that ran only the daily version would have been flattering itself on HZMetro.}
+
 We draw two conclusions, and regard them as among the paper's more useful outputs.
 
-First, a zero-shot evaluation on periodic data is not interpretable without its context length, and a context of one seasonal period is a specific and unfavourable choice rather than a neutral one. A model that has seen one instance of the daily profile cannot distinguish the profile from the noise around it, and the models here evidently use the second instance to do exactly that. Reported comparisons between foundation models and seasonal baselines should state the context in units of the season and, where the claim matters, vary it.
+First, a zero-shot evaluation on periodic data is not interpretable without its context length, and a context of one seasonal period is a specific and unfavourable choice rather than a neutral one. A model that has seen one instance of the daily profile cannot distinguish the profile from the noise around it, and the models here evidently use the second instance to do exactly that. Reported comparisons between foundation models and seasonal baselines should state the context in units of the season and, where the claim matters, vary it. \new{Table~\ref{tab:sweep} strengthens this: the sensitivity does not stop at the point where the comparison flips, so a study that happens to pick two seasons is not safe either, and the honest practice is to report the curve.}
+
+\new{A third point, which a reviewer raised and which we cannot resolve from inside this study, concerns pretraining contamination. HZMetro is a public benchmark released in 2022 and the foundation models evaluated here were pretrained on undisclosed corpora assembled later. We therefore cannot exclude that some of these series, or close relatives of them, appear in some model's training data, which would make the HZMetro comparison not strictly zero-shot. Three observations bound the concern without removing it. The context sensitivity in Table~\ref{tab:sweep} is hard to reconcile with memorisation, since a model that had memorised these series would not need seven daily periods of context to forecast them. The ROBOD result, on a dataset of room occupancy counts in a format far from any public forecasting corpus, is qualitatively identical. And the models disagree with each other substantially on HZMetro, by up to \SI{43}{\percent} at the longest horizon, which is not the pattern one expects if they were all reciting the same memorised series. We nonetheless regard the ROBOD result as the cleaner evidence for Hypothesis~\ref{hyp:transfer}, and we note that until pretraining corpora are disclosed, no evaluation of a foundation model on a public benchmark can fully exclude this, which is a limitation of the field rather than of this paper.}
 
 Second, the same choice silently disarms the baselines. At a context of exactly $m$, the residual series $y_t - y_{t-m}$ that a seasonal naive method needs to form a prediction interval is empty, and a time-of-day mean has one observation per bucket and therefore residuals that are identically zero. In our first run both baselines were consequently scored with zero-width intervals and covered a few percent of outcomes, which we would have reported as evidence that they are uncalibrated. They are not: at two seasons, seasonal naive covers \SI{83.9}{\percent} of outcomes on ROBOD against a nominal \SI{80}{\percent}. An evaluation that starves a baseline of its uncertainty and then reports it as overconfident has measured its own configuration.
 
 \subsection{H2: the predictability boundary, refuted}
 
-We pre-registered the claim that the zero-shot advantage declines with the daily seasonal strength of the target. Across datasets the pattern is not even ordered: the advantage is $+\SI{30.5}{\percent}$ at $S_m=0.44$ on ROBOD, $-\SI{4.0}{\percent}$ at $S_m=0.55$ on the simulator and $+\SI{16.2}{\percent}$ at $S_m=0.79$ on HZMetro, so the highest-$S_m$ dataset is not the one where the models do worst. That alone is not decisive, since three points with different sensors, scales and reference baselines cannot separate $S_m$ from everything else that distinguishes them, and Remark~\ref{rem:sim} forbids using the simulator for a transfer claim in any case.
+We \new{stated a priori} the claim that the zero-shot advantage declines with the daily seasonal strength of the target. Across datasets the pattern is not even ordered: the advantage is $+\SI{30.5}{\percent}$ at $S_m=0.44$ on ROBOD, $-\new{\SI{5.3}{\percent}}$ at $S_m=0.55$ on the simulator and $+\SI{16.2}{\percent}$ at $S_m=0.79$ on HZMetro, so the highest-$S_m$ dataset is not the one where the models do worst. That alone is not decisive, since three points with different sensors, scales and reference baselines cannot separate $S_m$ from everything else that distinguishes them, and Remark~\ref{rem:sim} forbids using the simulator for a transfer claim in any case.
 
 The test that can separate them is within a dataset. Figure~\ref{fig:within} regresses the per-series MAE advantage of a fixed foundation model over a fixed seasonal baseline on per-series $S_m$, holding dataset identity constant. On HZMetro's \num{160} flow series the slope is $-17$ percentage points per unit $S_m$ with a \SI{95}{\percent} confidence interval of $[-38, +4]$, $p=\num{0.12}$ and $R^2=\num{0.015}$; the rank correlation is $\rho=-0.17$. On ROBOD's five series nothing can be concluded. The sign is in the predicted direction and the magnitude is not negligible, but the relationship explains one and a half percent of the variance in the advantage and is not distinguishable from zero. \textbf{Hypothesis~\ref{hyp:boundary} is refuted at the series level, and we withdraw it.}
 
@@ -616,11 +803,53 @@ Last value          & 0.821 & 0.06 & 0.597 & 85.1 \\
 \end{tabular}
 \end{table}
 
-On ROBOD the result is unambiguous and is the cleanest form of the claim. Seasonal naive, properly equipped, is not badly calibrated at all: it covers \SI{83.9}{\percent} against a nominal \SI{80}{\percent}. It achieves that coverage with an interval of \num{2.35} persons, whereas Toto-2.0 covers \SI{90.1}{\percent} with an interval of \num{1.17} persons. The foundation model is therefore better calibrated \emph{and} twice as sharp, which is the only comparison of predictive distributions that means anything, and it also leads on CRPS at every horizon (Table~\ref{tab:robod}). The trained LightGBM buys its \SI{94.4}{\percent} coverage with an interval \num{1.6} times wider than Toto-2.0's, which is the familiar pattern of a model hedging against its own error rather than knowing it.
+\new{\paragraph{The calibration claim does not hold, and the sharpness claim does.}
+\label{sec:calib}
+The submitted version read Table~\ref{tab:calibration} as showing that on ROBOD the foundation model is ``better calibrated \emph{and} twice as sharp''. A reviewer pointed out that the first half is refuted by the very numbers quoted: seasonal naive covers \SI{83.9}{\percent} and Toto-2.0 covers \SI{90.1}{\percent} against a nominal \SI{80}{\percent}, so the deviation from nominal is \num{3.9} points for the baseline and \num{10.1} points for the foundation model, and the baseline is the better calibrated of the two. The claim was wrong and we withdraw it. Toto-2.0 overcovers, which is to say its intervals are too wide for their nominal level, and the honest description is that it is \emph{miscalibrated in the safe direction}.}
 
-On HZMetro the picture is more mixed and we report it as such. Seasonal naive has the narrowest interval of the well-behaved methods, at \num{83.7} passengers, but covers only \SI{70.6}{\percent}; TimesFM-3 multivariate covers \SI{75.6}{\percent} at a comparable \num{87.7}, and Toto-2.0 and Chronos-2 reach \SI{82.4}{\percent} and \SI{82.9}{\percent} at roughly \SI{40}{\percent} greater width. No method is well calibrated here and the foundation models are undercovering rather than overcovering. What is not mixed is CRPS, which scores location and spread together: TimesFM-3 attains \num{18.79} against \num{25.93} for seasonal naive at \SI{60}{\minute}, an improvement of \SI{27.5}{\percent}, and leads at every horizon.
+\new{Correcting this requires separating two things the submitted table conflated. Calibration is the distance from nominal coverage. Sharpness is width. A method can win on either while losing on the other, and comparing raw widths across methods with different coverages compares nothing, because a wider interval covering more outcomes is not thereby worse. Table~\ref{tab:matched} therefore rescales each method's interval about its own median by the single factor that brings its empirical coverage to the nominal \SI{80}{\percent}, estimated from its own standardised absolute errors, and reports the width at that common coverage. Widths in that column are comparable.}
 
-Hypothesis~\ref{hyp:uncertainty} is supported on ROBOD without qualification and on HZMetro on CRPS but not on coverage. This is a substantially stronger result than the one we would have reported from the one-season runs, where the same baselines emitted zero-width intervals and appeared to cover \SI{4}{\percent} of outcomes. That earlier comparison was uninformative, and had we reported it we would have claimed a victory over a baseline that our own configuration had disarmed.
+\new{\begin{table}[htbp]
+\centering
+\caption{\new{Calibration and sharpness separated. Coverage error is $|\text{coverage} - 0.8|$, lower better. The scale factor is what each method's half-width must be multiplied by to reach \SI{80}{\percent} empirical coverage; a factor below one means the method overcovers and can afford to be sharper. The last column is the resulting width at common coverage and is the only width column that compares like with like. Horizon \SI{60}{\minute} on both datasets.}}
+\label{tab:matched}
+\small
+\begin{tabular}{lcccc}
+\toprule
+Method & coverage & coverage error & scale to nominal & width at matched coverage \\
+\midrule
+\multicolumn{5}{l}{\emph{(a) ROBOD, room occupancy, persons}}\\
+Toto-2.0            & 0.901 & 0.101 & 0.66 & \best{0.77} \\
+TimesFM-3 (mv)      & 0.892 & 0.092 & 0.70 & 0.83 \\
+TimesFM-3 (uv)      & 0.890 & 0.090 & 0.67 & 0.85 \\
+Chronos-2 (mv)      & 0.912 & 0.112 & 0.79 & 1.14 \\
+LightGBM (trained)  & 0.944 & 0.144 & 0.82 & 1.55 \\
+Seasonal naive      & 0.839 & \best{0.039} & 1.60 & 3.75 \\
+Historical average  & 0.696 & 0.104 & n/a & n/a \\
+Last value          & 0.821 & 0.021 & n/a & n/a \\
+\midrule
+\multicolumn{5}{l}{\emph{(b) HZMetro, station flow, passengers per interval}}\\
+Historical average  & 0.367 & 0.433 & 3.72 & \best{93.5} \\
+TimesFM-3 (mv)      & 0.759 & 0.041 & 1.09 & 98.1 \\
+TimesFM-3 (uv)      & 0.774 & 0.026 & 1.04 & 101.2 \\
+Chronos-2 (mv)      & 0.825 & 0.025 & 0.92 & 105.2 \\
+Seasonal naive      & 0.696 & 0.104 & 1.28 & 108.1 \\
+Toto-2.0            & 0.826 & 0.026 & 0.93 & 115.0 \\
+LightGBM (trained)  & 0.819 & \best{0.019} & 0.86 & 162.7 \\
+Last value          & 0.586 & 0.214 & 2.31 & 198.4 \\
+\bottomrule
+\end{tabular}
+\end{table}}
+
+\new{On ROBOD the rescaling vindicates the sharpness claim emphatically while confirming the reviewer on calibration. At a common \SI{80}{\percent} coverage Toto-2.0 needs an interval of \num{0.77} persons and seasonal naive needs \num{3.75}, so the foundation model is not twice as sharp but \num{4.9} times as sharp, and the submitted figure understated the effect it was quoting. Seasonal naive remains the better calibrated of the two. These are compatible: the baseline happens to land near nominal, and its intervals are nonetheless so wide that forcing it to exactly nominal makes them wider still, because its errors are heavy-tailed relative to its residual quantiles.}
+
+\new{Two rows are reported as not available rather than filled in, and the reason is worth stating because it bears on how coverage should be read at all. Last value on ROBOD attains coverage of \SI{82.1}{\percent}, the closest to nominal of any method in the table, with a mean interval width of \num{0.06} persons. Its interval is degenerate on \SI{94.7}{\percent} of occasions, which is to say it has essentially no width, and it covers four outcomes in five only because room occupancy is frequently unchanged from one five-minute step to the next, so a point forecast lands exactly on the truth. Such an interval cannot be rescaled, since any multiple of zero is zero, and the matched-coverage comparison is undefined for it. Reporting it as the best-calibrated method, which the coverage column invites, would be an artefact of a discrete target. Historical average is excluded for the same reason on \SI{57.3}{\percent} of occasions. We note this as a general caution: on sparse count data, coverage of a nominal interval is not by itself evidence of a useful predictive distribution.}
+
+\new{On HZMetro the result is genuinely weak and we say so. At matched coverage TimesFM-3 needs \num{98.1} passengers against \num{108.1} for seasonal naive, an advantage of only \SI{9.3}{\percent}, which is a different order of claim from the ROBOD result. The best coverage error in the table belongs to the trained gradient-boosted model, at \num{0.019}, which is also the widest interval at matched coverage. Historical average appears sharpest at matched coverage but reaches only \SI{72.6}{\percent} coverage after rescaling rather than the targeted \SI{80}{\percent}, because \SI{9.3}{\percent} of its intervals are degenerate, so its entry is a lower bound rather than a comparable width.}
+
+\new{\paragraph{Verdict.} Hypothesis~\ref{hyp:uncertainty} is \textbf{partly refuted}. The sharpness half holds, decisively on ROBOD and marginally on HZMetro, and the CRPS half holds on both: TimesFM-3 attains \num{18.79} against \num{25.93} for seasonal naive at \SI{60}{\minute} on HZMetro, an improvement of \SI{27.5}{\percent}, and leads at every horizon. The calibration half does not hold on either dataset. The foundation models overcover on ROBOD and undercover on HZMetro, and on neither are they the closest to nominal. The defensible claim is that they are sharper at matched coverage and better on CRPS, not that they are better calibrated.}
+
+\new{One methodological point survives from the submitted version and is worth keeping. This comparison is substantially more informative than the one we would have reported from the one-season runs, where the same baselines emitted zero-width intervals and appeared to cover \SI{4}{\percent} of outcomes. Had we reported that, we would have claimed a victory over a baseline our own configuration had disarmed.}
 
 \begin{figure}[htbp]
 \centering
@@ -635,25 +864,36 @@ Table~\ref{tab:recon} quantifies the motivating claim of the paper on the simula
 
 \begin{table}[htbp]
 \centering
-\caption{Reconciliation on the simulated museum, \num{300} origins scored separately for each of two forecasters, computed offline from stored quantile forecasts. Residual is the mean absolute conservation violation and bound violation the total capacity and non-negativity violation, both in persons. $\Delta$MAE is the percentage change against the raw forecast, tested per forecaster by a paired Wilcoxon signed-rank test over that forecaster's \num{300} origins. Solve time is the median in milliseconds. Only the proposed projection achieves all three of coherence, feasibility and improved accuracy.}
+\caption{Reconciliation on the simulated museum, \new{at two operating points}, scored separately for each of two forecasters and computed offline from stored quantile forecasts. Residual is the mean absolute conservation violation and bound violation the total capacity and non-negativity violation, both in persons. \new{Peak error is the mean absolute error in the predicted maximum occupancy over the horizon, the risk-sensitive quantity an alarm rule consumes.} Solve time is the median in milliseconds. \new{The \emph{unbounded uncertainty} arm is new in this revision and uses the proposed diagonal $\bOm$ with the box removed, which is what makes the decomposition~\eqref{eq:decomposition} identifiable.}}
 \label{tab:recon}
 \footnotesize
-\setlength{\tabcolsep}{4.5pt}
-\begin{tabular}{lrrrrlrlr}
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{lrrrrrr}
 \toprule
-& & & & \multicolumn{2}{c}{$\Delta$MAE, TimesFM-3} & \multicolumn{2}{c}{$\Delta$MAE, LightGBM} & \\
-\cmidrule(lr){5-6}\cmidrule(lr){7-8}
-Reconciler & Residual & Bound & MAE & \% & $p$ & \% & $p$ & Solve \\
+Reconciler & Residual & Bound & MAE & CRPS & \new{Peak error} & Solve \\
 \midrule
-None (raw)     & \num{1.049} & \num{0.006} & 0.3538 & ref. & n/a & ref. & n/a & n/a \\
-MinT (shrink)  & \num{3e-10} & \num{1.738} & 0.3556 & $+0.37$ & \num{1.1e-37} & $+0.69$ & \num{1.4e-13} & \num{<0.1} \\
-Uniform weight & \num{7e-10} & \num{0.000} & 0.3548 & $+0.22$ & \num{1.2e-24} & $+0.34$ & \num{8.3e-09} & 6.2 \\
-\textbf{Proposed} & \num{4e-9} & \num{0.000} & \best{0.3511} & \best{$-0.98$} & \num{1.8e-1} & \best{$-0.52$} & \num{1.7e-05} & 10.1 \\
+\multicolumn{7}{l}{\emph{\new{(a) Baseline configuration, \num{300} origins, capacity binding on \SI{2.7}{\percent} of room-steps}}}\\
+None (raw)              & \num{1.055} & \num{0.006} & 0.3495 & 0.2687 & 1.298 & n/a \\
+MinT (shrink)           & \num{<1e-9} & \num{2.062} & 0.3516 & 0.2719 & 1.258 & \num{<0.1} \\
+\new{Unbounded uncertainty} & \num{<1e-9} & \num{1.414} & 0.3485 & 0.2700 & 1.223 & 2.6 \\
+Uniform weight          & \num{<1e-9} & \num{0.000} & 0.3506 & 0.2717 & 1.250 & 6.1 \\
+\textbf{Proposed}       & \num{<1e-9} & \num{0.000} & \best{0.3475} & \best{0.2697} & \best{1.217} & 6.2 \\
+\midrule
+\multicolumn{7}{l}{\emph{\new{(b) Crowded configuration, capacity binding on \SI{8.0}{\percent} of room-steps}}}\\
+None (raw)              & \num{0.960} & \num{0.451} & 0.3654 & 0.2914 & 1.113 & n/a \\
+MinT (shrink)           & \num{<1e-9} & \num{2.944} & 0.3676 & 0.2948 & 1.090 & \num{<0.1} \\
+\new{Unbounded uncertainty} & \num{<1e-9} & \num{2.377} & 0.3652 & 0.2931 & 1.076 & 2.6 \\
+Uniform weight          & \num{<1e-9} & \num{0.000} & 0.3661 & 0.2943 & 1.081 & 8.2 \\
+\textbf{Proposed}       & \num{<1e-9} & \num{0.000} & \best{0.3633} & \best{0.2926} & \best{1.069} & 7.2 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-All three reconcilers drive the conservation residual to solver tolerance, as Theorem~\ref{thm:unique} guarantees. The separation is in what they break on the way. MinT, which enforces the equalities by the linear map of Proposition~\ref{prop:mint} and has no representation of the box, introduces \num{1.738} persons of capacity and sign violation per origin. This is exactly the failure Proposition~\ref{prop:mint} predicts, and it is a consequential one: a reconciler that removes one class of physical impossibility by creating another has not delivered an admissible forecast. Both constrained projections leave the box exactly satisfied. Figure~\ref{fig:recon} shows the three criteria side by side; the proposed method is the only one that is not in the wrong on any of them. Hypothesis~\ref{hyp:coherence} is supported.
+All \new{four} reconcilers drive the conservation residual to solver tolerance, as Theorem~\ref{thm:unique} guarantees. The separation is in what they break on the way. MinT, which enforces the equalities by the \new{affine} map of Proposition~\ref{prop:mint} and has no representation of the box, introduces \new{\num{2.06}} persons of capacity and sign violation per origin. This is exactly the failure Proposition~\ref{prop:mint} predicts, and it is a consequential one: a reconciler that removes one class of physical impossibility by creating another has not delivered an admissible forecast. Both constrained projections leave the box exactly satisfied. Figure~\ref{fig:recon} shows the three criteria side by side; the proposed method is the only one that is not in the wrong on any of them. Hypothesis~\ref{hyp:coherence} is supported.
+
+\new{\paragraph{The violation follows the missing box, not the choice of weights.} The new unbounded uncertainty arm settles this. It carries the proposed diagonal $\bOm$ and no box, and it violates the bounds by \num{1.41} persons, between MinT's \num{2.06} and the constrained arms' exact zero. Had the violation been an artefact of MinT's shrunk covariance rather than of its missing inequalities, this arm would have been clean. It is not, which confirms that the box is doing the work the paper attributes to it.}
+
+\new{\paragraph{A crowded building, where the constraints actually bind.} A reviewer objected that a reconciliation result measured where the constraints are nearly inactive says little, noting that the raw bound violation in the submitted table was only \num{0.006} persons, so the box was essentially never active and the method's central feature was untested. The objection is correct and panel (b) answers it. We built a second configuration of the same floor plan with the same room capacities and doorway throughputs, raising the arrival rate from \num{1.6} to \num{7.0} visitors per minute at peak, adding a midday coach party on weekdays and lengthening dwell. Capacity then binds on \SI{8.0}{\percent} of room-steps against \SI{2.7}{\percent} in the baseline, and at the entrance specifically on \SI{20.5}{\percent} of steps against \SI{1.4}{\percent}. The raw bound violation rises by a factor of \num{75}, from \num{0.006} to \num{0.451} persons per origin, and MinT's violation rises from \num{2.06} to \num{2.94}. The qualitative conclusion is unchanged and the quantitative stakes are much higher: in the regime the method exists for, an unboxed reconciler asserts nearly three persons per origin of physically impossible occupancy, and a boxed one asserts none. This is the clearest evidence in the paper for the inequality constraints, and it required building the crowded configuration to obtain.}
 
 \begin{figure}[htbp]
 \centering
@@ -664,9 +904,44 @@ All three reconcilers drive the conservation residual to solver tolerance, as Th
 
 \subsection{H5: the uncertainty weighting is what makes it pay}
 
-The last two rows of Table~\ref{tab:recon} isolate the design decision this method rests on. The uniform and proposed arms solve the same quadratic program over the same admissible set, reach the same coherence and the same feasibility, and differ only in $\bOm$. Uniform weighting degrades MAE for both forecasters, by \SI{0.22}{\percent} and \SI{0.34}{\percent}: it fixes the physics and pays for it in accuracy. Weighting by the model's own quantile spread improves it for both, by \SI{0.98}{\percent} and \SI{0.52}{\percent}. Head to head on paired origins the proposed weighting beats uniform weighting by \SI{1.20}{\percent} for TimesFM-3 $(p=\num{1.9e-25})$ and \SI{0.86}{\percent} for LightGBM $(p=\num{1.8e-10})$, tested separately because the two forecasters share every origin and pooling them would treat correlated observations as independent. Hypothesis~\ref{hyp:weights} is supported.
+\new{Table~\ref{tab:ablation} isolates the two design decisions this method rests on, using the decomposition~\eqref{eq:decomposition} that the new unbounded arm makes possible. Each row is a paired comparison over identical origins, so the two arms differ in exactly one respect, and each effect carries a moving-block bootstrap interval alongside its $p$-value because a reviewer asked for intervals on the mean paired change and because, as explained below, the mean and the median here disagree in sign.}
 
-One entry in that table needs explaining rather than reporting, because it looks wrong: the proposed arm's largest mean improvement, \SI{0.98}{\percent} for TimesFM-3, carries its weakest $p$-value, \num{0.18}. Figure~\ref{fig:recondist} shows why. The distribution of per-origin effects is strongly asymmetric. For TimesFM-3 the proposed projection leaves \SI{70}{\percent} of origins very slightly worse and a minority of origins very much better, with a left tail reaching \SI{8}{\percent} improvement, so the mean is carried by the tail while the median, which is what a signed-rank test responds to, barely moves. The uniform arm has the opposite shape: an effect that is small, negative and almost universal, which is how a \SI{0.34}{\percent} degradation attains $p=\num{8.3e-9}$. Reporting only the means would have hidden this, and a referee would be right to ask. The operational reading is that uncertainty weighting is not a uniform small improvement but an intervention that occasionally matters a great deal, at origins where the forecast was badly wrong in a direction its own quantile spread had flagged.
+\new{\begin{table}[htbp]
+\centering
+\caption{\new{What the weighting does and what the box does, as separately identified effects. Each entry is the change in MAE of the first arm relative to the second, as a percentage of the second arm's MAE, so negative favours the first arm. The interval is a \SI{95}{\percent} moving-block bootstrap interval for the mean with blocks of ten consecutive origins; the $p$-value is a paired signed-rank test, which is a statement about the median. ``Worse'' is the fraction of origins the first arm makes worse.}}
+\label{tab:ablation}
+\footnotesize
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{llrlrrr}
+\toprule
+Comparison & Forecaster & mean \% & \SI{95}{\percent} CI & median \% & $p$ & worse \\
+\midrule
+\multicolumn{7}{l}{\emph{Effect of the uncertainty weighting, box held on}}\\
+Proposed vs uniform & TimesFM-3 & $-1.20$ & $[-1.70,-0.77]$ & $-0.01$ & \num{7.1e-23} & \SI{12}{\percent} \\
+Proposed vs uniform & LightGBM  & $-0.56$ & $[-0.83,-0.29]$ & $-0.00$ & \num{4.7e-08} & \SI{9}{\percent} \\
+\midrule
+\multicolumn{7}{l}{\emph{Effect of the box, proposed weighting held on}}\\
+Proposed vs unbounded & TimesFM-3 & $-0.28$ & $[-0.44,-0.16]$ & $-0.02$ & \num{6.2e-44} & \SI{2}{\percent} \\
+Proposed vs unbounded & LightGBM  & $-0.30$ & $[-0.39,-0.23]$ & $-0.00$ & \num{1.3e-13} & \SI{4}{\percent} \\
+\midrule
+\multicolumn{7}{l}{\emph{Effect of the weighting matrix, equalities only, versus MinT}}\\
+Unbounded vs MinT & TimesFM-3 & $-1.07$ & $[-1.49,-0.69]$ & $-0.01$ & \num{1.4e-25} & \SI{20}{\percent} \\
+Unbounded vs MinT & LightGBM  & $-0.69$ & $[-0.94,-0.46]$ & $-0.00$ & \num{9.1e-09} & \SI{8}{\percent} \\
+\midrule
+\multicolumn{7}{l}{\emph{For comparison: the whole layer against the raw forecast}}\\
+Proposed vs raw & TimesFM-3 & $-0.98$ & $[-1.41,-0.61]$ & $+0.01$ & \num{1.8e-1} & \SI{70}{\percent} \\
+Proposed vs raw & LightGBM  & $-0.10$ & $[-0.39,+0.19]$ & $+0.00$ & \num{1.1e-1} & \SI{15}{\percent} \\
+\bottomrule
+\end{tabular}
+\end{table}}
+
+\new{Both design decisions are confirmed, and the comparison that the submitted paper should have made is the middle block. Holding the weighting fixed and removing only the box costs \SI{0.28}{\percent} and \SI{0.30}{\percent} of MAE for the two forecasters. Holding the constraint set at equalities only and replacing MinT's shrunk covariance with the proposed diagonal $\bOm$ gains \SI{1.07}{\percent} and \SI{0.69}{\percent}. The weighting matrix is therefore the larger of the two effects by a factor of roughly three, and the submitted paper's attribution of the whole proposed-versus-MinT difference to the box was wrong in emphasis as well as in logic. Both effects are in the claimed direction, both are highly significant, and both are small in absolute terms. Hypothesis~\ref{hyp:weights} is supported.}
+
+\new{\paragraph{The whole layer against the raw forecast is a weaker result, and we separate it.} A reviewer asked that the strong feasibility finding be kept apart from the limited accuracy evidence, noting the \SI{0.98}{\percent} improvement for TimesFM-3 at $p=\num{0.18}$. The last block of Table~\ref{tab:ablation} is that separation. Against the raw forecast the mean improvement is \SI{0.98}{\percent} for TimesFM-3 and \SI{0.10}{\percent} for LightGBM, and neither is significant by a signed-rank test. The reason the ablations are overwhelmingly significant while this comparison is not is that the raw forecast is already nearly coherent on most origins, with a mean residual of \num{1.05} persons concentrated in a minority of occasions, so on most origins the projection has almost nothing to do and the paired difference is near zero. We state the two results at the strengths the evidence supports: the layer delivers exact coherence and exact feasibility, which is a guarantee rather than an estimate; it improves accuracy on average by a fraction of a percent, which is not statistically established against the raw forecast; and the internal design choices within the layer are established with high confidence.}
+
+\new{\paragraph{Where the gain actually lands.} A reviewer observed that roughly \SI{70}{\percent} of origins become slightly worse under the proposed projection and asked whether a risk-sensitive metric tells a different story. It does, and this is the most useful thing the reconciliation experiments produced. The relevant quantity for a crowd-protection rule is not mean error over all rooms and steps but error in the peak, since that is what an alarm threshold reads. On the baseline configuration the proposed projection reduces the mean absolute error of the predicted peak occupancy from \num{1.298} to \num{1.217} persons, a reduction of \SI{6.3}{\percent} against \SI{0.56}{\percent} for mean absolute error over the same origins, so the peak effect is eleven times the mean effect; on the crowded configuration it falls from \num{1.113} to \num{1.068}, a reduction of \SI{4.0}{\percent} against \SI{0.57}{\percent} for mean absolute error, a ratio of seven. Every reconciler improves the peak error, including the unboxed ones, and the proposed arm improves it most at both operating points. The asymmetry in Figure~\ref{fig:recondist} now has a clear reading: the projection nudges the many quiet origins imperceptibly in the wrong direction and corrects the few crowded ones substantially, and the crowded ones are the origins the system exists to get right. We regard this as the honest form of the claim for the layer, and it is stronger operationally than the MAE result while being weaker in the metric the submitted paper led with.}
+
+Figure~\ref{fig:recondist} shows the distribution behind these means\new{, and it explains why the mean and the median disagree in sign}. For TimesFM-3 the proposed projection leaves \SI{70}{\percent} of origins very slightly worse and a minority of origins very much better, with a left tail reaching \SI{8}{\percent} improvement, so the mean is carried by the tail while the median, which is what a signed-rank test responds to, barely moves\new{, and is in fact very slightly positive}. The uniform arm has the opposite shape: an effect that is small, negative and almost universal. Reporting only the means would have hidden this. The operational reading is that uncertainty weighting is not a uniform small improvement but an intervention that occasionally matters a great deal, at origins where the forecast was badly wrong in a direction its own quantile spread had flagged.
 
 \begin{figure}[htbp]
 \centering
@@ -677,41 +952,160 @@ One entry in that table needs explaining rather than reporting, because it looks
 
 The size of the point-accuracy gain is modest and we do not oversell it. Its importance is not the percentage but the sign, and the interpretation is precisely the one Corollary~\ref{cor:expected} anticipates. Theorem~\ref{thm:contraction} guarantees improvement in the $\bOm$-norm, not in MAE, so whether the guarantee survives the change of metric depends entirely on whether $\bOm$ points at the coordinates that were actually wrong. The uniform arm shows that when it does not, coherence is bought at a real cost in accuracy. The proposed arm shows that the quantile spread of a modern foundation model is informative enough about its own errors to convert that cost into a gain. We are not aware of prior direct evidence that a foundation model's predictive interval is useful as a reconciliation metric, and it is the practical reason the layer is worth adding rather than merely being defensible.
 
-CRPS moves slightly the other way, from \num{0.2723} to \num{0.2729}. The shift strategy translates every quantile by the median correction and therefore holds interval widths fixed, so a shifted interval that is now correctly located may be marginally worse scored if the raw spread was already tuned to an incoherent median. We report this rather than selecting the strategy that hides it.
+CRPS moves slightly the other way, from \num{0.2687} to \num{0.2697}. The shift strategy translates every quantile by the median correction and therefore holds interval widths fixed, so a shifted interval that is now correctly located may be marginally worse scored if the raw spread was already tuned to an incoherent median. We report this rather than selecting the strategy that hides it.
+
+\subsection{\new{How incoherent are the non-median quantiles?}}
+\label{sec:quantcoh}
+
+\new{Section~\ref{sec:method} derives, in~\eqref{eq:shiftresidual}, that the shift strategy leaves a conservation residual of $\bA(\yhat^{\alpha}-\yhat^{0.5})$ at level $\alpha$. Table~\ref{tab:quantcoh} measures it, so that the withdrawn claim is replaced by a number rather than by an argument.}
+
+\new{\begin{table}[htbp]
+\centering
+\caption{\new{Coherence level by level, on the simulated museum. Residual is the mean absolute conservation violation in persons and bound is the total capacity and sign violation. The shift strategy is exactly coherent and exactly feasible at the median and at no other level, as~\eqref{eq:shiftresidual} predicts. Per-quantile projection is coherent to solver tolerance and feasible at every level, at nine times the solve cost.}}
+\label{tab:quantcoh}
+\small
+\begin{tabular}{lcccccccccc}
+\toprule
+& \multicolumn{9}{c}{quantile level $\alpha$} \\
+\cmidrule(lr){2-10}
+Strategy & 0.1 & 0.2 & 0.3 & 0.4 & 0.5 & 0.6 & 0.7 & 0.8 & 0.9 \\
+\midrule
+\multicolumn{10}{l}{\emph{Conservation residual}}\\
+Shift        & 0.044 & 0.041 & 0.044 & 0.039 & \best{0.000} & 0.033 & 0.058 & 0.068 & 0.085 \\
+Per quantile & 0.012 & 0.009 & 0.008 & 0.008 & 0.006 & 0.004 & 0.004 & 0.003 & 0.004 \\
+\midrule
+\multicolumn{10}{l}{\emph{Bound violation}}\\
+Shift        & 9.832 & 6.238 & 4.347 & 2.179 & \best{0.000} & 0.132 & 0.390 & 1.285 & 6.656 \\
+Per quantile & \best{0.000} & \best{0.000} & \best{0.000} & \best{0.000} & \best{0.000} & \best{0.000} & \best{0.000} & \best{0.000} & \best{0.000} \\
+\bottomrule
+\end{tabular}
+\end{table}}
+
+\new{The measurement confirms the algebra and is more damaging to the submitted claim than the algebra alone suggests. Under the shift, the median is coherent to \num{2e-10} persons and every other level carries a residual between \num{0.033} and \num{0.085} persons, rising towards the tails exactly as~\eqref{eq:shiftresidual} requires, since the raw fan spreads furthest from its median there. The bound violations are the serious part: the \num{10}th percentile path violates the box by \num{9.83} persons per origin and the \num{90}th by \num{6.66}, because a common downward translation drives low quantiles of near-empty rooms below zero and a common upward one drives high quantiles of busy rooms above capacity. The submitted paper described this output as a coherent predictive distribution. It is a coherent median path wrapped in a fan that is neither coherent nor feasible, and the correct description is the one now given in Section~\ref{sec:method}.}
+
+\new{Per-quantile projection fixes feasibility completely, as it must, since each level is projected onto $\cY$, and reduces the residual by a factor of between \num{4} and \num{20}. Its residual is not exactly zero only because it is reported at the solver's tolerance accumulated over nine independent solves. We did not adopt it as the default for the reason given in Section~\ref{sec:method}: nine separately coherent paths are not the quantiles of a coherent joint law, so the gain is partly illusory. We did check the one failure mode that would make it unusable, namely crossing, and the empirical crossing rate before any monotone repair is zero at every level on these data, so the independently projected levels happen to remain correctly ordered here. We report the option and its cost, and recommend the shift with the narrower claim attached.}
+
+\subsection{\new{Does the Gaussian reading of the interval matter?}}
+\label{sec:sigma}
+
+\new{A reviewer noted that~\eqref{eq:sigma} converts an eighty percent interval into a standard deviation through a Gaussian quantile while occupancy counts are sparse, discrete and certainly not Gaussian, and asked whether the assumption is necessary and how sensitive the result is to the choice of interval. The answer is that it is not necessary, and the reason is structural rather than empirical.}
+
+\new{The projection~\eqref{eq:qp} minimises a quadratic form in which only the \emph{relative} weights matter: replacing $\bOm$ by $\lambda\bOm$ for any $\lambda>0$ scales the objective without moving its argmin. The Gaussian constant $2z_{0.9} \approx 2.5631$ is exactly such a scalar, so it divides out of the solution entirely, and the Gaussian reading of the interval has no effect whatsoever on the projected point. We make this exact in the implementation by normalising $\bOm$ to unit mean diagonal before the solve, which is a no-op mathematically but is necessary numerically, because a solver compares its residual against an absolute tolerance and would otherwise solve the same problem to different accuracies depending on the units in which $\sigma$ happened to be expressed. With that normalisation in place, dividing the \SI{80}{\percent} width by \num{2.5631} and not dividing it at all give bit-identical reconciled forecasts, which we assert as a unit test rather than only observing.}
+
+\new{What could matter is not the constant but the \emph{shape} of the map, meaning which part of the fan is read. Table~\ref{tab:sigma} varies that. Reading the central \SI{60}{\percent} interval instead of the \SI{80}{\percent} changes the MAE after reconciliation from \num{0.3176} to \num{0.3181}, and reading the central \SI{40}{\percent} changes it to \num{0.3190}: degradations of \SI{0.15}{\percent} and \SI{0.43}{\percent}. Individual coordinates move more than that, by up to \num{1.9} persons, so the choice is not vacuous, but the aggregate effect is an order of magnitude smaller than the effects the method is claimed to produce. The projection is therefore robust to the distributional assumption in the only sense that matters, and we no longer rest any claim on normality.}
+
+\new{\begin{table}[htbp]
+\centering
+\caption{\new{Sensitivity of the projection to how the predictive spread is read, on \num{120} origin-forecaster pairs of the simulated museum. The first two rows differ by the multiplicative constant \num{2.5631} alone and are identical to machine precision, which is the scale invariance of the objective. The last two read a narrower interval and therefore change the relative weights. The final column reports the share of coordinates whose spread is clipped by the floor $\varepsilon$, which is high because many galleries are shut or empty for much of the day and the models correctly predict them with near-zero spread.}}
+\label{tab:sigma}
+\small
+\begin{tabular}{llccc}
+\toprule
+Mapping & $\sigma_i$ from & MAE after & max coordinate shift & at floor \\
+\midrule
+Gaussian \SI{80}{\percent} (published) & $(q_{90}-q_{10})/2.5631$ & 0.31760 & ref. & \SI{63.6}{\percent} \\
+Raw \SI{80}{\percent} width             & $q_{90}-q_{10}$          & 0.31760 & \num{1e-13} & \SI{63.6}{\percent} \\
+Gaussian \SI{60}{\percent}              & $(q_{80}-q_{20})/1.6832$ & 0.31809 & 1.66 & \SI{67.0}{\percent} \\
+Gaussian \SI{40}{\percent}              & $(q_{70}-q_{30})/1.0488$ & 0.31898 & 1.88 & \SI{69.6}{\percent} \\
+\bottomrule
+\end{tabular}
+\end{table}}
+
+\subsection{\new{Dependence between forecast origins}}
+\label{sec:depend}
+
+\new{A reviewer raised three connected objections to the inference in Section~\ref{sec:metrics}: that rolling-origin loss differentials remain serially dependent, that the Newey-West truncation should depend on the origin stride and not only on the horizon, and that there is cross-series dependence as well, with no statement of how losses were aggregated across series. All three are legitimate and we address them with measurements.}
+
+\new{Aggregation is across series first, producing one loss per origin, and the Diebold-Mariano test then runs over origins. This is the conservative choice and the reason to prefer it is that series from the same station or the same building are strongly dependent, so treating each series as an independent observation would inflate the effective sample by a factor of up to \num{160} and manufacture significance. Serial dependence is real and we quantify it: the lag-one autocorrelation of the paired loss differential is \num{0.57} on ROBOD and \num{0.92} on HZMetro, so an unadjusted test would be badly wrong on either.}
+
+\new{The truncation deserves more care than the standard rule gives it, and checking it turned up something worth stating. The published choice $h-1$ is expressed in \emph{steps}, whereas the differentials being tested are indexed by \emph{origin}, and consecutive origins are a stride apart. With a stride $s$ and horizon $h$ the forecast windows of two origins overlap only if they are fewer than $\lceil h/s \rceil$ origins apart, so the truncation implied by the design is $\lceil h/s\rceil - 1$ origins. On HZMetro, with $h=8$ steps and $s=2$, that is three origins against a published truncation of seven. On ROBOD, with $h=12$ and $s=12$, consecutive forecast windows do not overlap at all and the implied truncation is zero against a published eleven. The published rule is therefore the \emph{more} conservative of the two in both cases, not the looser one: it smooths over more autocovariances than the design requires, which inflates the variance estimate and the $p$-value. Reporting it was the safe error rather than the dangerous one, but it was an error and we report both lags.}
+
+\new{Table~\ref{tab:depend} gives the headline comparison on each dataset under three treatments. On ROBOD the conclusion is robust: $p = \num{2.8e-2}$ at the published lag, $p = \num{2.1e-5}$ at the design-implied lag, and a moving-block bootstrap interval for the mean differential of $[-0.364, -0.045]$ that excludes zero. On HZMetro it is not: $p = \num{0.162}$ at the published lag, $p = \num{0.073}$ at the design-implied lag, and a block bootstrap interval of $[-11.70, +1.46]$ that contains zero. The conclusions of Section~\ref{sec:h1} are unchanged, since they were already stated as significant at \SI{15}{\minute} and not beyond, but the dependence-robust interval makes the limitation sharper than the $p$-values alone did: at the longest horizon on HZMetro, the advantage of a foundation model over a seasonal baseline is not statistically established once serial dependence is accounted for by a method that makes no functional-form assumption. We state this plainly in the conclusion.}
+
+\new{\begin{table}[htbp]
+\centering
+\caption{\new{Robustness of the headline test to how dependence between origins is handled. The comparison is the best zero-shot configuration against the strongest untrained baseline at the longest horizon of each dataset. The moving-block bootstrap resamples blocks of ten consecutive origins and so preserves local dependence of any form.}}
+\label{tab:depend}
+\small
+\begin{tabular}{lcc}
+\toprule
+ & ROBOD & HZMetro \\
+\midrule
+Comparison & Toto-2.0 vs last value & TimesFM-3 (mv) vs seasonal naive \\
+Origins & 261 & 196 \\
+Stride, steps & 12 & 2 \\
+Horizon, steps & 12 & 8 \\
+Lag-1 autocorrelation of differential & $+0.57$ & $+0.92$ \\
+\midrule
+$p$, Newey-West at published lag $h-1$ & \num{2.8e-2} (lag 11) & \num{1.6e-1} (lag 7) \\
+$p$, Newey-West at design-implied lag & \num{2.1e-5} (lag 0) & \num{7.3e-2} (lag 3) \\
+\SI{95}{\percent} block bootstrap CI for mean & $[-0.364,-0.045]$ & $[-11.70,+1.46]$ \\
+Excludes zero & yes & \textbf{no} \\
+\bottomrule
+\end{tabular}
+\end{table}}
+
+\subsection{\new{What the simulator actually generates}}
+\label{sec:simprofile}
+
+\new{A reviewer asked for detail on arrival rates, route choices, dwell times, room capacities and peak crowding, and for evidence that the resulting distributions are plausible, on the grounds that a reader cannot judge a simulator-based result without knowing what the simulator produces. Figure~\ref{fig:simprofile} and the numbers here supply it; the full parameter file is in the repository.}
+
+\new{The house museum has eight interior rooms with capacities from \num{10} persons on the staircase to \num{30} at the entrance, and eight directed doorway pairs with clear widths from \SI{0.9}{\metre} to \SI{2.2}{\metre} and throughputs from \num{14} to \num{50} persons per minute. Visitors arrive by a non-homogeneous Poisson process with a weekday peak of \num{1.6} per minute in the baseline configuration and \num{7.0} in the crowded one, modulated by a daily opening profile and inflated by group arrivals. Route choice follows the ant, fish, butterfly and grasshopper typology of \citet{veron1983} in the proportions reported by \citet{zancanaro2007}, and dwell per room is log-normal with a base of \SI{2.2}{\minute} in the baseline configuration, calibrated so that total visit duration matches the range reported by \citet{yoshimura2014louvre}.}
+
+\new{The outputs are plausible in the respects that bear on this paper. The baseline configuration admits \num{508} visitors per day over \num{479} simulated days, with a mean daily peak building occupancy of \num{69.6} persons and a \num{95}th percentile of \num{92.1}. The daily profile in panel (a) rises from opening at ten, peaks in mid-afternoon and falls to zero by nineteen, which is the shape reported for house museums. Load is strongly unequal across rooms, as panel (c) shows: the parlour averages \num{4.0} occupants and the shop \num{0.18}, a spread of more than twenty to one, which is the behaviour the route typology is intended to produce and which matters here because a reconciler that only ever saw uniformly loaded rooms would not be tested. Peak-to-mean ratios run from \num{4.5} in the parlour to \num{51} in the shop.}
+
+\new{The crowded configuration, which exists so that the box constraints bind, admits \num{653} visitors per day with a mean daily peak of \num{84.4} persons. Panel (b) shows the consequence directly: the distribution of occupancy as a fraction of capacity gains a spike at exactly one. Capacity binds on \SI{8.0}{\percent} of room-steps overall against \SI{2.7}{\percent} in the baseline, and at the two rooms where crowd protection would actually be managed the change is larger, from \SI{1.4}{\percent} to \SI{20.5}{\percent} of steps at the entrance and from \SI{12.1}{\percent} to \SI{28.4}{\percent} in the parlour. We draw attention to the honest limitation this exposes. Even in the baseline configuration the parlour is at capacity \SI{12.1}{\percent} of the time, yet the raw forecasts violate the box by only \num{0.006} persons per origin, because the forecasters rarely predict values above capacity even when the truth sits at it. The box is therefore mostly inactive in the baseline experiment not because the building is empty but because the forecasts are conservative, which is a point in the forecasters' favour and against the submitted paper's emphasis on the box.}
+
+\new{\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.96\textwidth]{figures/simulator_profile.png}
+\caption{\new{What the simulator generates, at both operating points. (a) Mean occupancy of the whole building by time of day. (b) Distribution of room occupancy as a fraction of room capacity, log density; the dashed line is capacity and the crowded configuration puts visible mass on it. (c) Mean occupancy by room, ranked, showing that load is strongly unequal across the floor plan.}}
+\label{fig:simprofile}
+\end{figure}}
 
 \subsection{Data efficiency and cost}
+\label{sec:efficiency}
 
-Figure~\ref{fig:efficiency} places the zero-shot model against a locally trained LightGBM given one to ninety days of site-specific data on the simulated museum. The trained model is already competitive at one day and saturates almost immediately, ending \SI{4.0}{\percent} ahead at \SI{60}{\minute}. We had pre-registered a crossover of at least two weeks and it did not occur: on a simulated signal this clean, a local model learns essentially all there is to learn within a day. That is a failed prediction on our part and we report it as one.
+Figure~\ref{fig:efficiency} places the zero-shot model against a locally trained LightGBM given one to ninety days of site-specific data on the simulated museum. The trained model is already competitive at one day and saturates almost immediately, ending \SI{5.8}{\percent} ahead at \SI{60}{\minute}, moving only between \num{0.5926} and \num{0.5995} MASE across a ninety-fold change in the training budget. We had \new{stated a priori} a crossover of at least two weeks and it did not occur: on a simulated signal this clean, a local model learns essentially all there is to learn within a day. That is a failed prediction on our part and we report it as one.
 
-It is worth being clear that this simulator result points the opposite way to both real datasets, where the same family of trained model, given each site's full training split, was beaten at every horizon. The discrepancy is informative about the simulator rather than about the method. Our generator produces a stationary visitor process with no holidays, no exhibitions, no weather and no equipment faults, so ninety days of it contains far less novelty than ninety days of a real building, and a local model correspondingly has far less to be surprised by. The honest reading is that the data-efficiency figure gives an upper bound on how quickly a local model catches up, and the real datasets give the operationally relevant answer.
+\new{\paragraph{Is the real-data result explained by data scarcity? No.} The submitted version explained the trained model's weakness on ROBOD by the shortness of the record, calling it ``precisely the cold start the paper is about''. A reviewer objected that this had not been isolated: the weakness could equally be feature selection, tuning, the global training strategy or the handling of missing observations, and the submitted design varied none of them while varying the dataset. The objection is well founded and we tested the claim directly, holding the specification fixed and varying only the number of days of ROBOD history available for fitting. Panel (b) of Figure~\ref{fig:efficiency} reports it.}
+
+\new{The explanation fails. Across a twenty-fold increase in the training budget, from three days to sixty, the trained model's MASE at one hour moves from \num{0.5544} to \num{0.5304} and back to \num{0.5392}, an improvement of at most \SI{4.3}{\percent} and not monotone. For comparison, the re-specification of Section~\ref{sec:lgbm} bought \SI{14.8}{\percent} on the same dataset at the same horizon. Specification mattered roughly three and a half times more than quantity, and twenty times the data closes less than a third of what changing the model's shape closes. Toto-2.0 at \num{0.3743} and last value at \num{0.5381} are invariant across the budgets by construction, since neither is fitted, and we verified that invariance as a check on the experiment rather than assuming it.}
+
+\new{We therefore withdraw the data-scarcity explanation. What the ROBOD gap reflects is not that there is too little history to learn from but that a gradient-boosted model on lag and calendar features, however much of that history it is given, is a worse description of room occupancy than a pre-trained sequence model is. This is a more interesting claim than the one we made and a less comfortable one, because it does not support the cold-start framing that motivated the paper. The cold-start argument survives only in its narrow and still useful form: a newly instrumented building has no history at all, and a zero-shot model needs none, which is a statement about availability on day one rather than about the asymptotic value of data.}
+
+It is worth being clear that \new{the simulator panel} points the opposite way to both real datasets, where the same family of trained model, given each site's full training split, was beaten at every horizon. The discrepancy is informative about the simulator rather than about the method. Our generator produces a stationary visitor process with no holidays, no exhibitions, no weather and no equipment faults, so ninety days of it contains far less novelty than ninety days of a real building, and a local model correspondingly has far less to be surprised by. The honest reading is that the data-efficiency figure gives an upper bound on how quickly a local model catches up, and the real datasets give the operationally relevant answer.
 
 \begin{figure}[htbp]
 \centering
-\begin{subfigure}{0.40\textwidth}
-\includegraphics[width=\linewidth]{figures/data_efficiency.png}
-\caption{Data efficiency, simulated museum.}
+\includegraphics[width=0.96\textwidth]{figures/data_efficiency.png}
+\caption{\new{Accuracy against the amount of site-specific training data, with the model specification held fixed so that only the budget varies. (a) The simulator, where a locally trained model saturates within a day, so the two-week crossover we stated a priori does not occur. (b) ROBOD, new in this revision, where twenty times more data buys at most \SI{4.3}{\percent} and leaves the trained model far short of the zero-shot one. Panel (b) is what refutes the data-scarcity explanation of the submitted version: if scarcity were the cause, this curve would descend towards the Toto-2.0 line, and it does not.}}
 \label{fig:efficiency}
-\end{subfigure}
-\hfill
-\begin{subfigure}{0.56\textwidth}
-\includegraphics[width=\linewidth]{figures/calibration.png}
-\caption{Calibration against horizon on both real sites.}
-\label{fig:calibration}
-\end{subfigure}
-\caption{Left: a locally trained model saturates within a day on the simulator, so the pre-registered two-week crossover does not occur; on both real datasets the same family is beaten at every horizon. Right: empirical coverage of the nominal \SI{80}{\percent} interval, dashed, with every method forming intervals from its own uncertainty. Coverage must be read together with the widths in Table~\ref{tab:calibration}.}
 \end{figure}
 
-Cost is compatible with on-premise deployment, which matters because the privacy argument of Section~\ref{sec:related} depends on inference staying inside the building. On the \num{240}-series HZMetro panel at two seasons of context, the median per-origin latency on commodity hardware is \SI{269}{\milli\second} for Toto-2.0, \SI{302}{\milli\second} for Chronos-2 and \SI{303}{\milli\second} for TimesFM-3 multivariate, against \SI{16}{\milli\second} for seasonal naive and \SI{356}{\milli\second} for the trained LightGBM. The multivariate TimesFM-3 path is \num{2.5} times faster than its univariate path (\SI{748}{\milli\second}), since one forward pass replaces per-series calls. Reconciliation adds \SI{10.1}{\milli\second}. A forecast plus projection therefore completes in well under a second at the scale of any museum, against horizons of tens of minutes.
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.92\textwidth]{figures/calibration.png}
+\caption{Empirical coverage of the nominal \SI{80}{\percent} interval, dashed, against horizon on both real sites, with every method forming intervals from its own uncertainty. Coverage must be read together with the widths in Table~\ref{tab:calibration} and, for a comparison that means anything, with the matched-coverage widths in Table~\ref{tab:matched}.}
+\label{fig:calibration}
+\end{figure}
+
+Cost is compatible with on-premise deployment, which matters because the privacy argument of Section~\ref{sec:related} depends on inference staying inside the building. On the \num{240}-series HZMetro panel at two seasons of context, the median per-origin latency on commodity hardware is \SI{269}{\milli\second} for Toto-2.0, \SI{302}{\milli\second} for Chronos-2 and \SI{303}{\milli\second} for TimesFM-3 multivariate, against \SI{16}{\milli\second} for seasonal naive and \SI{356}{\milli\second} for the trained LightGBM. The multivariate TimesFM-3 path is \num{2.5} times faster than its univariate path (\SI{748}{\milli\second}), since one forward pass replaces per-series calls. Reconciliation adds \new{\SI{6.2}{\milli\second} on the baseline configuration and \SI{7.2}{\milli\second} on the crowded one, measured as the mean wall-clock time of the OSQP solve}. A forecast plus projection therefore completes in well under a second at the scale of any museum, against horizons of tens of minutes.
 
 Memory is the constraint that decides whether this runs on a building controller or needs a server, so it is worth stating what we can and cannot measure. Our harness records peak memory with \texttt{tracemalloc}, which counts Python heap allocations only. On the Apple Silicon hardware used here every tensor is held by the Metal allocator instead, so that column reports one to three megabytes for a transformer forward pass and is not a measurement of the model's footprint; we report it nowhere in this paper and have corrected the instrumentation. The figure a deployment needs is the peak resident set size of a process that loads one model and runs a single pass at the largest shape in this study, measured in isolation because a process high-water mark credits only whichever model allocates first. Measured that way, Chronos-2 peaks at \SI{1.04}{\gibi\byte}, TimesFM-3 at \SI{2.75}{\gibi\byte} in both modes and Toto-2.0 at \SI{2.92}{\gibi\byte}, against \SI{0.20}{\gibi\byte} for the trained LightGBM and \SI{0.10}{\gibi\byte} for the trivial baselines. That is comfortably within a modern edge device and decisively above a microcontroller, which is the practically relevant distinction.
 
 %=============================================================================
 \section{Discussion}
 \label{sec:discussion}
+\label{sec:disc}
 %=============================================================================
 
 \paragraph{What to deploy.}
-The results support a simpler recommendation than the one we set out to make. On both real datasets, at every horizon at which a museum would act, a frozen foundation model beats every local baseline we could afford to run, including one trained on the site's own history, and supplies a sharper predictive distribution at the same or better coverage. We no longer believe there is a useful rule for deciding in advance which family to deploy, because the statistic we proposed for it does not predict the advantage within a dataset. Apply the projection of Section~\ref{sec:method} in either case: it costs \SI{10}{\milli\second}, guarantees physical admissibility, and improves accuracy rather than costing it when weighted by the model's own uncertainty.
+\new{The submitted version of this paragraph recommended a frozen foundation model without qualification, on the grounds that it beat every local baseline we could afford to run. Section~\ref{sec:lgbm} removes that ground, and the recommendation this revision makes is conditional on something a practitioner can actually check before deploying.}
+
+\new{What the evidence supports is the following. If no site-specific history exists, deploy a frozen foundation model, because it is the only option that produces a forecast at all and because its accuracy on both real sites is within the range a local model reaches only after being carefully specified. If a site has accumulated history and the engineering capacity to specify a local model properly, meaning seasonal lags, tuned hyper-parameters and a per-series fit, then the comparison is genuinely open and must be made on that site's own data: on metro station flow the local model won by \SI{28.9}{\percent}, on room occupancy it lost by \SI{26.8}{\percent}, and we can offer no statistic that predicts which case a new building falls into. We tried: the seasonal-strength statistic we proposed for exactly this purpose does not predict the advantage within a dataset (Section~\ref{sec:results}). The honest recommendation is therefore to use the zero-shot model as the cold-start default and to re-run the comparison locally once history exists, rather than to treat either paradigm as settled.}
+
+\new{On the reconciliation layer, a reviewer judged our recommendation stronger than the evidence, and we accept the correction. The projection's guarantees are proved and hold for any admissible truth, so the case for applying \emph{some} topology constraint rests on mathematics rather than on our experiments. The case for our particular uncertainty weighting rests on measurements taken on simulated data only. Those measurements are consistent and the ablations of Section~\ref{sec:results} decompose them cleanly, but the effect sizes are small, around \SI{1}{\percent} of MASE, and have not been reproduced on any real building. We therefore recommend the constrained projection on the strength of feasibility, which it guarantees at a cost of \SIrange{6}{7}{\milli\second}, and we offer the uncertainty weighting as the better-performing variant in our simulations rather than as an established improvement. A practitioner who adopted uniform weighting instead would lose, on our evidence, about one percent of accuracy and no guarantee.}
 
 \paragraph{How to evaluate.}
 The finding with the broadest reach is not about any model. Section~\ref{sec:context} shows that the comparison between a foundation model and a seasonal baseline on periodic data reverses between one and two seasonal periods of context, while the baseline itself barely moves. A reader of a zero-shot leaderboard cannot recover this, and a context of one season is easy to choose by accident because it is the smallest at which a seasonal baseline is defined. The same choice starves that baseline's interval estimates, which turns a fair probabilistic comparison into a walkover. We would encourage reporting context length in units of the target's dominant season, and treating any zero-shot comparison against a periodic baseline as incomplete without a sensitivity check on it.
@@ -720,11 +1114,18 @@ The finding with the broadest reach is not about any model. Section~\ref{sec:con
 TimesFM-3 in multivariate mode beats its univariate path on ROBOD at every horizon, and loses to it on HZMetro at every horizon. We do not have a controlled ablation isolating the mechanism, since the covariate experiments of our original design did not run, and we therefore make no claim about cross-series attention beyond reporting the measurements. We flag it as the most immediate open question, and note the caution of \citet{shao2022stid} that apparent gains from cross-series structure often have a simpler explanation.
 
 \paragraph{Limitations.}
-No real heritage museum pilot is included, no real museum data appears anywhere in this paper, and we make no deployment claim for a gallery. The title names heritage museums as the motivating application and the benchmark we release, not as a source of evaluation data. The two real datasets are an instrumented office building and a metro network, chosen because they are the closest public analogues that exist: the first for indoor, bounded, directly counted room occupancy, the second for directional flow on a physical graph obeying the same continuity equation. Whether visitor behaviour in a gallery differs in ways that matter for forecasting is untested here and is the obvious thing to test next.
+\label{sec:limits}
+No real heritage museum pilot is included, no real museum data appears anywhere in this paper, and we make no deployment claim for a gallery. \new{The title of the submitted version named heritage museums, which reviewers reasonably read as a claim about the evaluation data. We have changed it. The title now names the two physical quantities the method couples, occupancy and doorway flow, and the museum setting appears only where it belongs, as the motivating application and as the subject of the simulator we release.} The two real datasets are an instrumented office building and a metro network, chosen because they are the closest public analogues that exist: the first for indoor, bounded, directly counted room occupancy, the second for directional flow on a physical graph obeying the same continuity equation. Whether visitor behaviour in a gallery differs in ways that matter for forecasting is untested here and is the obvious thing to test next.
 
-The reconciliation result rests on the simulator, and Remark~\ref{rem:admissible} gives the reason this is not merely a convenience: on real data the measured occupancies and doorway counts do not balance, because counters miscount, so the true future does not lie in the admissible set and the error-reduction guarantee weakens to the extent of that discrepancy. A real site measuring both sides of~\eqref{eq:conservation}, such as dense indoor tracking, is the single most valuable addition to this evidence base and is our next step. Separately, the simulator's data-efficiency result contradicts both real datasets on whether a trained local model catches up, which we read as a limitation of the generator's realism.
+The reconciliation result rests on the simulator, and Remark~\ref{rem:admissible} gives the reason this is not merely a convenience: on real data the measured occupancies and doorway counts do not balance, because counters miscount, so the true future does not lie in the admissible set and the error-reduction guarantee weakens to the extent of that discrepancy. \new{We want to be unambiguous about the consequence, because it is the most important limitation in the paper. The proofs of Section~\ref{sec:method} hold unconditionally and are not contingent on any dataset. The empirical claim that the projection improves accuracy, and the ablations attributing that improvement to the uncertainty weighting rather than to the box constraints, hold on simulated data and nowhere else. Neither of the two real datasets can test them: ROBOD reports room occupancy without doorway counts, and HZMetro reports station flow without station occupancy, so in each case one side of~\eqref{eq:conservation} is missing and the constraint cannot be formed. We searched for a public dataset giving both for one building on a common clock and did not find one.}
 
-Two of our five hypotheses did not survive contact with the data in the form we stated them. The predictability hypothesis is refuted at the series level and withdrawn. The interval comparison is supported on ROBOD and only partially on HZMetro, where no method is well calibrated. We have kept both in the paper in their original form with the outcomes attached, rather than restating them to match what we found. Finally, the degradation and decision-utility experiments in our design remain unrun, so claims about sensor faults and about operational lead time are neither supported nor refuted here.
+\new{Obtaining such data is future work, and we can state what it requires rather than leaving it as an aspiration. The building needs synchronised counting at every doorway, including the ones leading outside, plus an independent occupancy estimate per room, since a doorway-derived occupancy would make the constraint hold by construction and test nothing. Fixed overhead depth or thermal sensors at each threshold with a separate per-room estimate would satisfy this, as would dense indoor positioning. Published pedestrian datasets of the ATC type come close in that they track individuals in a real indoor space, so a graph could be imposed on them after the fact, but they lack an occupancy measurement independent of the tracking and so inherit the same circularity. Until such a dataset exists, every reconciliation number in this paper should be read as a measurement of our simulator and not of a building.}
+
+Separately, the simulator's data-efficiency result contradicts both real datasets on whether a trained local model catches up, which we read as a limitation of the generator's realism.
+
+Two of our five hypotheses did not survive contact with the data in the form we stated them\new{, and a third survives only on one site}. The predictability hypothesis is refuted at the series level and withdrawn. The interval comparison is supported \new{in its sharpness-at-matched-coverage form and refuted in its calibration form, since the seasonal baseline is closer to nominal coverage than any foundation model on ROBOD (Section~\ref{sec:calib}). The transferability hypothesis holds against a well-specified local model on ROBOD and fails on HZMetro (Section~\ref{sec:lgbm})}. We have kept \new{all of them} in the paper in their original form with the outcomes attached, rather than restating them to match what we found.
+
+\new{Finally, the following experiments from our original design remain unrun, and no claim in this paper depends on them: the sensor-degradation study, so we say nothing about robustness to counter faults, drift or dropout; the covariate ablation, so we say nothing about whether known-future covariates help, despite the interface supporting them; and the decision-utility study, so we say nothing about operational lead time or about the three decision rules described in the introduction. A reviewer noted that our repository documentation described some of these as not executed while the manuscript appeared to report results from the same families, and we have corrected the documentation so that the experiment registry and this paragraph agree: the families reported here are the forecasting comparisons, the context and training-budget sweeps, and the reconciliation study, and the three listed above are absent from both.}
 
 \paragraph{Ethics.}
 The system counts and does not identify. Every claim rests on aggregate counts per space and per doorway, with no trajectories, no biometric data and no personal data leaving the building. This is a design constraint with a methodological consequence, since aggregate counting discards exactly the individual-level information trajectory methods rely on, which is why the problem is posed as forecasting on a graph. A deployment using device-based sensing would still warrant a data protection impact assessment under Article 35 of the GDPR \citep{gdpr}, and the same machinery would be open to misuse if paired with identifying sensors.
@@ -733,17 +1134,47 @@ The system counts and does not identify. Every claim rests on aggregate counts p
 \section{Conclusion}
 %=============================================================================
 
-We asked whether a pre-trained time series foundation model can forecast occupancy and flow in a building it has never seen, and whether such a model can be made to respect the building's topology. On the first question the answer is yes and is not conditional in the way we expected. Given no site-specific training, the foundation models beat every local baseline on both real datasets, by \SI{30.5}{\percent} MASE at one hour on room occupancy and \SI{29.8}{\percent} at fifteen minutes on metro flow, and they beat a gradient-boosted model trained on each site's own history at every horizon on both. On \num{158} of \num{160} metro flow series the advantage is positive. They are also sharper: on room occupancy a foundation model covers \SI{90}{\percent} of outcomes with an interval half the width of a correctly interval-equipped seasonal baseline that covers \SI{84}{\percent}.
+We asked whether a pre-trained time series foundation model can forecast occupancy and flow in a building it has never seen, and whether such a model can be made to respect the building's topology. \new{The two questions receive answers of very different strengths, and the main change in this revision is to stop stating them as though they were equally secure.}
 
-Two of our own hypotheses failed, and both failures are more useful than the claims would have been. The prediction that the advantage declines with the target's seasonal strength does not survive a within-dataset test on \num{160} series, so we withdraw it; the between-dataset ordering that appeared to support it was close to a restatement of the definition of the statistic. And the entire metro comparison turns on context length: at one seasonal period of history the foundation models lose to a seasonal baseline, at two they win by a third, while the baseline itself does not move. Any zero-shot evaluation on periodic data that does not report and vary its context length is reporting a property of its configuration.
+\new{On the first question the answer is a qualified yes, and the qualification is not the one we anticipated. Given no site-specific training, the foundation models beat every trivial baseline on both real datasets, by \SI{30.5}{\percent} MASE at one hour on room occupancy and \SI{29.8}{\percent} at fifteen minutes on metro flow. Against a local gradient-boosted competitor the result splits by site: ahead by \SI{26.8}{\percent} on room occupancy, behind by \SI{28.9}{\percent} on metro flow once that competitor is given seasonal lags, tuned hyper-parameters and a per-series fit. The split is not an inconvenience to be averaged away, it is the finding, and it means the useful claim is that zero-shot forecasting is a competitive default under a cold start rather than a uniformly superior method. Two further qualifications matter as much. The comparison against a seasonal baseline is decided by context length: at one seasonal period of history the foundation models lose on metro flow, at two they win by a third, while the baseline itself does not move, and accuracy keeps improving to about seven seasons. And under a moving-block bootstrap that respects the overlap between forecast origins, the confidence interval for the foundation model's advantage over the seasonal baseline at the longest metro horizon contains zero, so that particular advantage is not statistically established even where the pointwise test rejects. Any zero-shot evaluation on periodic data that does not report and vary its context length, and does not account for dependence between overlapping origins, is reporting a property of its configuration.}
 
-On the second question the answer is affirmative and comes with proofs. The uncertainty-weighted constrained projection is unique, exactly coherent, and provably non-expansive towards any admissible truth, with MinT recovered exactly as the special case that discards the inequality constraints and, as predicted and then measured, breaks them by \num{1.74} persons per origin. Raw forecasts violate conservation by \num{1.05} persons per node per interval; the projection removes this in \SI{10.1}{\milli\second} while improving point accuracy, and the head-to-head comparison against uniform weighting, tested per forecaster, shows the improvement comes specifically from using the model's own quantile spread as the metric. We release the simulated benchmark, the reconciliation layer and the harness, in which every reported number is traceable to a logged run.
+\new{Two of our own hypotheses failed outright, and both failures are more useful than the claims would have been.} The prediction that the advantage declines with the target's seasonal strength does not survive a within-dataset test on \num{160} \new{scored} series, so we withdraw it; the between-dataset ordering that appeared to support it was close to a restatement of the definition of the statistic. \new{The prediction that foundation models are better calibrated is also withdrawn: the seasonal baseline is nearer nominal coverage, and what survives is a sharpness claim, namely that at matched empirical coverage the foundation model's interval is \num{4.9} times narrower.}
+
+On the second question the answer \new{is affirmative as mathematics and provisional as measurement, and the distinction is the point}. The uncertainty-weighted constrained projection is unique, exactly coherent, and provably non-expansive towards any admissible truth, with MinT recovered exactly as the special case that discards the inequality constraints and, as predicted and then measured, breaks them by \num{2.06} persons per origin, rising to \num{2.94} in a scenario where capacity actually binds. Raw forecasts violate conservation by \num{1.05} persons per node per interval; the projection removes this in \SI{6.2}{\milli\second} while improving point accuracy, and the ablations isolate where that improvement comes from: the uncertainty weighting contributes about \SI{1}{\percent} of MASE and the inequality constraints about \SI{0.3}{\percent}. \new{Three boundaries on this half of the paper should travel with it. Every one of these empirical numbers comes from the simulator, because no public dataset reports occupancy and doorway flow for the same building, so the reconciliation layer is demonstrated rather than validated and real-building validation is the principal item of future work. The guarantee covers the projected median path and not the whole predictive distribution: under the default shift strategy the non-median quantiles are translated by the median correction and remain mildly incoherent, by \num{0.085} persons in residual at the \num{95}th percentile, and the per-quantile strategy removes this at a cost in the quantile loss. And the operationally relevant effect is larger than the mean effect, since peak error falls by \SI{6.3}{\percent} against \SI{0.56}{\percent} for mean absolute error, which is the comparison a crowd-safety rule would act on.} We release the simulated benchmark, the reconciliation layer and the harness, in which every reported number is traceable to a logged run.
 
 %=============================================================================
 \section*{Reproducibility statement}
 %=============================================================================
 
 All experiments are driven by versioned configuration files. Each run writes a manifest with the git commit, configuration hash, seed, package versions and hardware, alongside per-origin predictions and metrics. Every figure and table here is generated by one script from those artefacts, and it fails rather than emitting a placeholder when a run is missing. Public datasets are fetched by per-source scripts that record download date and checksum; the data itself is not redistributed.
+
+\new{A reviewer asked us to correct a word. The submitted version described our hypotheses as ``pre-registered''. They were not: they were written down in the repository before the corresponding experiments were run, and the commit history evidences that, but they were never deposited with any registry, and ``pre-registered'' is a term of art that implies a third-party time-stamped record. We have replaced it with ``stated a priori'' throughout, which is what we are in a position to claim.}
+
+\new{The same reviewer noted that we declared data availability as not applicable while also supplying a code repository, which is inconsistent. The statement below resolves it.}
+
+%=============================================================================
+\section*{\new{Data and code availability}}
+%=============================================================================
+
+\new{The source code for the simulator, the forecaster adapters, the reconciliation layer, the evaluation harness and the single script that generates every figure and table in this paper is available at \url{https://github.com/001shahab/zero-shot-FMF}. The simulated benchmark is released as the generator plus its seed and configuration rather than as a static file, so that any reported scenario can be reproduced bit for bit and new ones can be drawn. The two real datasets are third-party public releases and are not redistributed here: ROBOD is available from the authors of \citet{tekler2022robod} and HZMetro from the PVCGN release of \citet{liu2022pvcgn}. Our repository contains per-source fetch scripts that record the download date and a checksum of what was retrieved, so that a reader obtaining the datasets independently can confirm they hold the same bytes we did. Run manifests, per-origin predictions and metrics for every experiment reported here are included, which means the tables and figures can be regenerated without re-running the forecasters or obtaining the datasets.}
+
+%=============================================================================
+\section*{\new{Funding}}
+%=============================================================================
+
+\new{This research received no specific grant from any funding agency in the public, commercial or not-for-profit sectors. No funding was received for conducting this study, and no organisation provided financial support for the work. The computation was performed on hardware already available to the authors.}
+
+%=============================================================================
+\section*{\new{Acknowledgment}}
+%=============================================================================
+
+\new{The authors thank the authors of the ROBOD and PVCGN releases for making their datasets publicly available, and the developers of TimesFM, Chronos and Toto for releasing model weights and inference code without which a zero-shot study of this kind could not be run. We also thank the anonymous reviewers, whose objections changed several of this paper's conclusions rather than only its presentation: the strengthened local competitor, the separation of calibration from sharpness, the dependence-aware confidence intervals and the explicit statement of what is and is not tested on real data all follow from their comments.}
+
+%=============================================================================
+\section*{\new{Declaration of competing interest}}
+%=============================================================================
+
+\new{One author is affiliated with 3S Holding O\"U. The company provided no financial support for this work and had no role in the study design, in the collection, analysis or interpretation of data, in the writing of the manuscript, or in the decision to submit it for publication. The authors declare no other competing interests.}
 
 \bibliographystyle{unsrtnat}
 \bibliography{ref}

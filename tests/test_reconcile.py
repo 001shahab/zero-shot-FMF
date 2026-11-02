@@ -25,6 +25,7 @@ from mflow.reconcile.constraints import (
 )
 from mflow.reconcile.mint import MinTReconciler, _shrunk_covariance
 from mflow.reconcile.projection import (
+    DEFAULT_SIGMA_FLOOR,
     IdentityReconciler,
     ProjectionReconciler,
     ReconciliationError,
@@ -218,6 +219,37 @@ def test_uncertainty_weighting_requires_sigma(system, origin) -> None:
     forecast, _ = _incoherent_forecast(system, rhs)
     with pytest.raises(ReconciliationError, match="needs a predictive spread"):
         ProjectionReconciler().reconcile(forecast, system, rhs)
+
+
+def test_projection_ignores_the_scale_of_sigma(system, origin) -> None:
+    """Rescaling every spread by a constant must not move the projection.
+
+    The paper leans on this: it is why the Gaussian constant used to turn a 10-90 interval
+    into a spread does not have to be the right one. Scaling W by a positive constant
+    leaves the argmin untouched in exact arithmetic, but the solver sees an absolute
+    residual tolerance, so the property only holds because W is normalised to unit mean.
+    """
+    rhs = system.rhs(origin)
+    forecast, sigma = _incoherent_forecast(system, rhs)
+    sigma[0, :] = 0.05
+    sigma[-1, :] = 8.0
+    reconciler = ProjectionReconciler(weighting="uncertainty")
+
+    published = reconciler.reconcile(forecast, system, rhs, sigma=sigma).reconciled
+    for scale in (1e-3, 1e3):
+        # The floor is absolute and would clip the shrunk spreads, so lift it with them.
+        rescaled = ProjectionReconciler(
+            weighting="uncertainty", sigma_floor=DEFAULT_SIGMA_FLOOR * scale
+        ).reconcile(forecast, system, rhs, sigma=sigma * scale).reconciled
+        np.testing.assert_allclose(published, rescaled, atol=1e-6)
+
+
+def test_degenerate_weights_are_refused_rather_than_normalised(system, origin) -> None:
+    rhs = system.rhs(origin)
+    forecast, sigma = _incoherent_forecast(system, rhs)
+    reconciler = ProjectionReconciler(weighting="uncertainty", sigma_floor=0.0, ridge=0.0)
+    with pytest.raises(ReconciliationError, match="degenerate"):
+        reconciler.reconcile(forecast, system, rhs, sigma=np.full_like(sigma, np.inf))
 
 
 def test_projection_is_deterministic(system, origin) -> None:

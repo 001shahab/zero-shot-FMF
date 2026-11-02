@@ -71,10 +71,47 @@ violate the project's second ground rule. Run the rest and read `paper/tables/`,
 | **E6** | Does the forecast change a decision an operator would make? | `configs/experiments/E6.yaml` |
 | **E7a** | Does zero-shot forecasting transfer to a real building? | `configs/experiments/E7_robod.yaml` |
 | **E7b** | Does it transfer to real network flow at scale? | `configs/experiments/E7_hzmetro.yaml` |
+| **E8** | Does a weekly seasonal baseline change the comparison? | `configs/experiments/E8_{robod,hzmetro}.yaml` |
+| **E9** | Where does accuracy saturate in context length? | `configs/experiments/E9_*.yaml` |
+| **E10** | Does a properly specified local model overtake zero-shot? | `configs/experiments/E10_lightgbm_{robod,hzmetro}.yaml` |
+| **E11** | How much local history does the real data say it takes? | `configs/experiments/E11_efficiency_{robod,sim}.yaml` |
+| **E12** | Does reconciliation behave differently when capacity binds? | `configs/experiments/E12_crowded.yaml` |
 
-### The results there are so far
+### Which experiments have actually been run
 
-Both halves of E7 have been run; E1–E6 have not. Three seeds each, tested against
+This section is the registry of record, and it is kept in agreement with the manuscript
+in `paper/Topology_Constrained_Reconciliation_for_Zero_Shot_Forecastingof_Occupancy_and_Flow/`.
+A reviewer of that manuscript observed, correctly, that an earlier version of this file
+described experiments as unrun while the paper reported results from the same families.
+The table below is the corrected statement. Every row marked *run* has manifests under
+`results/`; `ls results/` is the authoritative check and will contradict this table if it
+ever drifts again.
+
+| | Status | What it produced |
+|---|---|---|
+| **E1** | not run | superseded by E4 and E12, which cover the simulator |
+| **E2** | **not run** | no claim in the paper about covariates helping |
+| **E3** | not run | superseded by E4 and E12, which carry the reconciliation arms |
+| **E4** | run, 3 seeds | simulator reconciliation study and training-budget sweep |
+| **E5** | **not run** | no claim in the paper about sensor degradation |
+| **E6** | **not run** | no claim in the paper about decision utility or lead time |
+| **E7a** | run, 3 seeds | ROBOD headline comparison |
+| **E7b** | run, 3 seeds | HZMetro headline comparison |
+| **E8** | run, 2 seeds | weekly seasonal baseline on both real sites |
+| **E9** | run, 1 seed per point | context sweep, 1 to 14 daily seasons, both real sites |
+| **E10** | run, 1 seed | gradient-boosted ladder: seasonal lags, tuned, per series |
+| **E11** | run | training-budget sweep on real ROBOD and on the simulator |
+| **E12** | run, 1 seed | crowded simulator scenario where capacity binds |
+
+The three rows in bold are the ones that remain genuinely unexecuted, and the manuscript's
+limitations section lists exactly these three as the experiments on which it makes no
+claim. The reconciliation evidence comes from E4 and E12, both on the simulator, because
+no public dataset reports occupancy and doorway flow for the same building; this is stated
+as the paper's principal limitation and its principal item of future work.
+
+### The headline results
+
+Three seeds each, tested against
 `last_value` with Diebold–Mariano and Holm–Bonferroni correction within each horizon. A
 star marks a method significantly better than `last_value`. MASE, lower is better.
 
@@ -136,6 +173,18 @@ sharply and end up at or below persistence at two hours.
 So the honest summary of E7 is conditional rather than triumphal: zero-shot forecasting
 earns its place where the signal is smooth and aperiodic and a building has no usable
 seasonal baseline, and it does not displace a seasonal baseline where one exists.
+
+**Two later experiments change the reading of the table above, and the paper reports
+them rather than these numbers.** The HZMetro figures here were produced with a context
+of one daily season. E9 sweeps the context from one to fourteen seasons and shows that
+the comparison reverses between one and two, and that accuracy keeps improving to about
+seven, so the table above measures a configuration and not a property of the models.
+And E10 replaces the single globally pooled gradient-boosted model used here with one
+given daily and weekly seasonal lags, tuned hyper-parameters and a per-series fit; that
+model overtakes every foundation model on HZMetro while still losing on ROBOD. The
+manuscript's transferability claim is therefore stated per site: a competitive cold-start
+default, not a dominance result. Read `paper/.../main.tex` for the figures that supersede
+this section, or rebuild the tables yourself with `mflow report`.
 
 ---
 
@@ -573,7 +622,7 @@ than its agreement with the building.
 
 The runner enforces this rather than leaving it to a reader to notice — asking for any
 reconciler but `none` on such a site is an error. The consequence is that **the
-reconciliation claim rests on simulation (E3, E5) and is not corroborated on real data.**
+reconciliation claim rests on simulation (E4 and E12) and is not corroborated on real data.**
 
 The specification assumed HZMetro would corroborate it, describing it as "a closed graph
 with a conservation identity of exactly the assumed form". Reading the release rather
@@ -706,13 +755,15 @@ only parses when told to target 3.12 or later.
 | M4 forecaster interface and implementations | complete — all four foundation wrappers verified against their real checkpoints |
 | M5 reconciliation | complete |
 | M6 protocol, metrics, significance, harness, risk heads, reporting | complete |
-| M7 experiment configs E1–E7, runner, CLI | complete |
+| M7 experiment configs E1–E12, runner, CLI | complete |
 | Dataset acquisition framework (download, checksums, provenance, adapter base) | complete |
 | ROBOD adapter and `scripts/fetch_robod.py` | complete — `E7_robod` runs end to end |
 | PVCGN adapter and `scripts/fetch_pvcgn.py` | complete — `E7_hzmetro` runs end to end |
-| **E7 executed** | both halves, three seeds each, logged under `results/` |
-| E1–E6 executed | **not yet run** |
-| A real site measuring occupancy **and** flow | **not started** — the gap that leaves the reconciliation claim resting on simulation; ATC indoor tracking is the candidate |
+| **Executed** | E4, E7a, E7b, E8, E9, E10, E11, E12 — all logged under `results/`; see the registry above |
+| E2 covariate ablation executed | **not yet run** — no claim in the paper depends on it |
+| E5 sensor degradation executed | **not yet run** — no claim in the paper depends on it |
+| E6 decision utility executed | **not yet run** — no claim in the paper depends on it |
+| A real site measuring occupancy **and** flow | **not started** — the gap that leaves the reconciliation claim resting on simulation, and the manuscript's principal item of future work. ATC indoor tracking is the nearest candidate but supplies no occupancy measurement independent of the tracking, so it cannot test the constraint without circularity. What is needed is synchronised doorway counting plus a separate per-room occupancy estimate. |
 | Melbourne, UWB, DCRNN adapters | **not started** |
 
 The simulated sites in `data/canonical/` are generated, not committed. Build them with:
