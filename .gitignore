@@ -51,6 +51,9 @@ htmlcov/
 # paper/Arxiv/analysis.py regenerates every one of them from results/.
 !/paper/Arxiv/
 !/paper/Topology_Constrained_Reconciliation_for_Zero_Shot_Forecastingof_Occupancy_and_Flow/
+# The second-revision manuscript, which is the text verify_round2.py checks and the
+# version the tag manuscript-r2 identifies.
+!/paper/Zero_Shot_FMF_v3/
 # LaTeX build products, in whichever manuscript directory produces them.
 *.aux
 *.bbl

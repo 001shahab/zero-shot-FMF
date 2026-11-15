@@ -1,50 +1,57 @@
-# Zero-Shot Foundation Model Forecasting of Visitor Flow in Heritage Museums
+# Topology-Constrained Reconciliation for Zero-Shot Forecasting of Building Occupancy and Doorway Flow
 
-**with Topology-Constrained Reconciliation**
+Code, configurations and analysis scripts for the manuscript of the same title.
 
 Shahab Anbarjafari · [shb@3sholding.com](mailto:shb@3sholding.com)
 
 ---
 
-Heritage museums need to know how many people will be in each gallery in five, fifteen,
-thirty and sixty minutes. They need it to protect the collection, to staff the rooms, and
-to keep the building safe when it fills. What they do not have is years of labelled
-history to train a model on: the sensors went in last month, the building is one of a
-kind, and nobody is going to run a two-year data collection campaign before the first
-useful forecast.
+A building that has just been instrumented has no history on which to train a
+forecaster, and it still needs to know how many people will be in each room in five,
+fifteen, thirty and sixty minutes. This repository asks two questions about that cold
+start. Can a pre-trained time series foundation model produce the forecast with **no
+site-specific training at all**? And can the building's own topology, the fact that a
+person who leaves one room must appear in an adjacent one, be imposed on the forecast as
+a hard constraint, so that the forecast is physically coherent and no less accurate?
 
-This repository asks whether a time-series foundation model can produce that forecast
-with **no site-specific training at all**, and whether the building's own topology — the
-fact that a person who leaves one room must appear in an adjacent one — can be imposed on
-the forecast as a hard constraint to make it both physically coherent and more accurate.
+The codebase is the experimental apparatus behind the answers: a discrete-event simulator
+of visitor movement through a building, a literature-grounded sensor degradation model,
+wrappers for four foundation models, a constrained-projection reconciler, a leakage-proof
+rolling-origin evaluation harness with significance testing, and a reporting layer that
+refuses to emit a number that no run produced.
 
-The codebase is a complete experimental apparatus: a discrete-event museum simulator, a
-literature-grounded sensor degradation model, wrappers for four foundation models, a
-constrained-projection reconciler, a leakage-proof rolling-origin evaluation harness with
-proper significance testing, three decision-utility heads, and a reporting layer that
-refuses to emit a number no run produced.
+The project began as a study of heritage museums, and the simulator and several module
+names still say so. No real museum data was available, so the manuscript makes no claim
+about museums: its real-data evidence is room occupancy in an office and laboratory
+building and station flow in a metro network, and its reconciliation evidence is
+simulated. The title was changed in the first revision to say what the evidence covers.
 
 ---
 
 ## Table of contents
 
+- [Version of record](#version-of-record)
 - [What is being claimed](#what-is-being-claimed)
-  - [The results there are so far](#the-results-there-are-so-far)
+  - [Which experiments have been run](#which-experiments-have-been-run)
+  - [Seeds are not replicates](#seeds-are-not-replicates)
+  - [Results](#results)
+  - [The configuration behind every table](#the-configuration-behind-every-table)
+  - [Analyses added in the second revision](#analyses-added-in-the-second-revision)
 - [Ground rules](#ground-rules)
 - [Installation](#installation)
 - [Quick start](#quick-start)
 - [The canonical data contract](#the-canonical-data-contract)
 - [Architecture](#architecture)
-  - [M1 — schema and graph](#m1--schema-and-graph)
-  - [M2 — the simulator](#m2--the-simulator)
-  - [M3 — sensor degradation](#m3--sensor-degradation)
-  - [M4 — forecasters](#m4--forecasters)
-  - [M5 — topology-constrained reconciliation](#m5--topology-constrained-reconciliation)
-  - [M6 — evaluation](#m6--evaluation)
-  - [M7 — experiments](#m7--experiments)
+  - [M1: schema and graph](#m1-schema-and-graph)
+  - [M2: the simulator](#m2-the-simulator)
+  - [M3: sensor degradation](#m3-sensor-degradation)
+  - [M4: forecasters](#m4-forecasters)
+  - [M5: topology-constrained reconciliation](#m5-topology-constrained-reconciliation)
+  - [M6: evaluation](#m6-evaluation)
+  - [M7: experiments](#m7-experiments)
 - [Command line reference](#command-line-reference)
 - [Datasets](#datasets)
-  - [A limitation worth stating before the results](#a-limitation-worth-stating-before-the-results)
+  - [A limitation that bounds the reconciliation claim](#a-limitation-that-bounds-the-reconciliation-claim)
   - [ROBOD](#robod)
   - [HZMetro](#hzmetro)
 - [Reproducibility](#reproducibility)
@@ -54,137 +61,268 @@ refuses to emit a number no run produced.
 
 ---
 
+## Version of record
+
+| | |
+|---|---|
+| Manuscript | *Topology-Constrained Reconciliation for Zero-Shot Forecasting of Building Occupancy and Doorway Flow*, second revision |
+| Git tag | `manuscript-r2` |
+| Manuscript source | `paper/Zero_Shot_FMF_v3/MainText.tex` |
+| Analysis scripts and logged summaries | `paper/Topology_Constrained_Reconciliation_for_Zero_Shot_Forecastingof_Occupancy_and_Flow/` |
+| Experiment configurations | `configs/experiments/` |
+
+Everything in this file describes the repository at that tag. A reviewer of the first
+revision found that the public branch still carried the documentation of the original
+submission: it described most experiments as not executed, it reported results that the
+manuscript had since superseded, and it referred to three seeds. The observation was
+correct. The corrections had been made in a working copy and had not been published.
+This file is the corrected statement, and the tag exists so that the version a reader
+checks is unambiguous. The earlier results are not repeated here; they remain in the
+commit history.
+
+`paper/Topology_Constrained_Reconciliation_for_Zero_Shot_Forecastingof_Occupancy_and_Flow/main.tex`
+is the preprint-format source of an earlier version and is kept only for the record. The
+analysis scripts live beside it because that is where they were first written.
+
+---
+
 ## What is being claimed
 
-Eight experiments, each answering one question. Only one of them has been run so far, and
-only its numbers appear below; writing a number here that no logged run produced would
-violate the project's second ground rule. Run the rest and read `paper/tables/`, which
-`mflow report` rebuilds from `results/` and which is not committed for the same reason.
+The manuscript states five hypotheses, each with the observation that would falsify it,
+and reports the outcome of each. Two were not borne out and one holds only in part. The
+table gives the outcome as the manuscript states it.
 
-| | Question | Config |
+| | Hypothesis | Outcome |
 |---|---|---|
-| **E1** | Does a zero-shot foundation model beat the baselines a building already has? | `configs/experiments/E1.yaml` |
-| **E2** | Do the other series, the opening schedule, or the CO2 proxy add anything? | `configs/experiments/E2.yaml` |
-| **E3** | Does the constrained projection improve accuracy as well as coherence? | `configs/experiments/E3.yaml` |
-| **E4** | How much local history before a trained model overtakes zero-shot? | `configs/experiments/E4.yaml` |
-| **E5** | How fast does each method degrade as the sensors get worse? | `configs/experiments/E5.yaml` |
-| **E6** | Does the forecast change a decision an operator would make? | `configs/experiments/E6.yaml` |
-| **E7a** | Does zero-shot forecasting transfer to a real building? | `configs/experiments/E7_robod.yaml` |
-| **E7b** | Does it transfer to real network flow at scale? | `configs/experiments/E7_hzmetro.yaml` |
-| **E8** | Does a weekly seasonal baseline change the comparison? | `configs/experiments/E8_{robod,hzmetro}.yaml` |
-| **E9** | Where does accuracy saturate in context length? | `configs/experiments/E9_*.yaml` |
-| **E10** | Does a properly specified local model overtake zero-shot? | `configs/experiments/E10_lightgbm_{robod,hzmetro}.yaml` |
-| **E11** | How much local history does the real data say it takes? | `configs/experiments/E11_efficiency_{robod,sim}.yaml` |
-| **E12** | Does reconciliation behave differently when capacity binds? | `configs/experiments/E12_crowded.yaml` |
+| **H1** | A zero-shot foundation model beats every local baseline, including a trained one, on real occupancy and real flow | **Falsified as stated.** It beats every untrained baseline on both sites. Against a properly specified gradient-boosted model it is ahead on room occupancy and behind on metro flow |
+| **H2** | The zero-shot advantage declines with the seasonal strength of the target, within a dataset | **Not supported by the within-dataset analysis.** The slope has the predicted sign and its confidence interval includes zero, so the dependence is not statistically established. It is not shown to be absent |
+| **H3** | Foundation models are better calibrated and sharper at matched coverage, with lower CRPS | **Partly refuted.** The calibration claim does not hold. The CRPS claim holds on both sites. The sharpness claim holds against the seasonal baseline on room occupancy and is not established out of sample on metro flow |
+| **H4** | Raw forecasts violate conservation materially, and the projection removes the violation while respecting bounds that MinT breaks | **Supported, on the simulator only** |
+| **H5** | Weighting the projection by the model's own quantile spread is what makes reconciliation improve accuracy | **Supported for the internal design choices, on the simulator only.** Against the raw forecast the gain is in the mean and not at the typical origin |
 
-### Which experiments have actually been run
+Three boundaries apply to everything below. The reconciliation evidence is simulated,
+because no public dataset reports occupancy and doorway flow for the same building. The
+coherence guarantee covers the projected median path and not the whole predictive
+distribution. And no operational or decision benefit is claimed, because the
+decision-utility experiment was not run.
 
-This section is the registry of record, and it is kept in agreement with the manuscript
-in `paper/Topology_Constrained_Reconciliation_for_Zero_Shot_Forecastingof_Occupancy_and_Flow/`.
-A reviewer of that manuscript observed, correctly, that an earlier version of this file
-described experiments as unrun while the paper reported results from the same families.
-The table below is the corrected statement. Every row marked *run* has manifests under
-`results/`; `ls results/` is the authoritative check and will contradict this table if it
-ever drifts again.
+### Which experiments have been run
 
-| | Status | What it produced |
-|---|---|---|
-| **E1** | not run | superseded by E4 and E12, which cover the simulator |
-| **E2** | **not run** | no claim in the paper about covariates helping |
-| **E3** | not run | superseded by E4 and E12, which carry the reconciliation arms |
-| **E4** | run, 3 seeds | simulator reconciliation study and training-budget sweep |
-| **E5** | **not run** | no claim in the paper about sensor degradation |
-| **E6** | **not run** | no claim in the paper about decision utility or lead time |
-| **E7a** | run, 3 seeds | ROBOD headline comparison |
-| **E7b** | run, 3 seeds | HZMetro headline comparison |
-| **E8** | run, 2 seeds | weekly seasonal baseline on both real sites |
-| **E9** | run, 1 seed per point | context sweep, 1 to 14 daily seasons, both real sites |
-| **E10** | run, 1 seed | gradient-boosted ladder: seasonal lags, tuned, per series |
-| **E11** | run | training-budget sweep on real ROBOD and on the simulator |
-| **E12** | run, 1 seed | crowded simulator scenario where capacity binds |
+This table is the registry of record and agrees with the limitations section of the
+manuscript. Every row marked *run* has manifests under `results/`, which is not
+committed and is rebuilt from the configurations; `ls results/` is the authoritative
+check.
 
-The three rows in bold are the ones that remain genuinely unexecuted, and the manuscript's
-limitations section lists exactly these three as the experiments on which it makes no
-claim. The reconciliation evidence comes from E4 and E12, both on the simulator, because
-no public dataset reports occupancy and doorway flow for the same building; this is stated
-as the paper's principal limitation and its principal item of future work.
+| | Question | Config | Status | Used in the manuscript |
+|---|---|---|---|---|
+| **E1** | Zero-shot against the baselines, on the simulator | `E1.yaml`, `E1_classical.yaml` | not run | no; the simulator is covered by E11 and E12 |
+| **E2** | Do covariates add anything? | `E2.yaml` | **not run** | no; no claim about covariates |
+| **E3** | Reconciliation arms on the simulator | `E3.yaml` | not run | no; the reconcilers are applied offline to the forecasts of E11 and E12 |
+| **E4** | Training-budget sweep on the simulator | `E4.yaml` | run, superseded | no; replaced by E11, which removes a padding artefact at small budgets |
+| **E5** | Sensor degradation | `E5.yaml` | **not run** | no; no claim about robustness to sensor faults |
+| **E6** | Decision utility | `E6.yaml` | **not run** | no; no claim about lead time or operational benefit |
+| **E7** | Real sites at one daily season of context | `E7_robod.yaml`, `E7_hzmetro.yaml` | run | only as the one-season column of Table 5 and for the determinism check |
+| **E8** | Real sites at two daily seasons, with a trained baseline | `E8_robod.yaml`, `E8_hzmetro.yaml` | run | yes; the headline comparison, calibration and dependence analyses |
+| **E9** | Context sweep, 1 to 14 daily seasons | `E9_*.yaml` | run | yes; Table 6 |
+| **E10** | Gradient-boosted ladder: horizon matched, seasonal lags, tuned, per series | `E10_lightgbm_robod.yaml`, `E10_lightgbm_hzmetro.yaml` | run | yes; Table 4 |
+| **E11** | Training-budget sweep on real ROBOD and on the simulator | `E11_efficiency_robod.yaml`, `E11_efficiency_sim.yaml` | run | yes; data efficiency, and the baseline reconciliation study |
+| **E12** | Simulator scenario in which capacity binds | `E12_crowded.yaml` | run | yes; the crowded reconciliation study |
 
-### The headline results
+All configuration files are in `configs/experiments/`. The three rows in bold are the
+experiments that remain unexecuted and on which the manuscript makes no claim: the
+covariate ablation, the sensor-degradation study and the decision-utility study. E1 and
+E3 were also never executed as separate experiments; the questions they asked are
+answered by E11 and E12, with the reconcilers applied offline to the stored quantile
+forecasts by the analysis script.
 
-Three seeds each, tested against
-`last_value` with Diebold–Mariano and Holm–Bonferroni correction within each horizon. A
-star marks a method significantly better than `last_value`. MASE, lower is better.
+### Seeds are not replicates
 
-**E7a — ROBOD, five rooms of real occupancy at five minutes.** 261 origins per seed of
-518 enumerated; the other 257 were dropped for having no observation anywhere in their
-context or no truth in their target window, and each manifest records the count and the
-reason. 783 scored origins over three seeds.
+Every forecaster here except the gradient-boosted model is deterministic. This was
+checked and not assumed: on both real sites the three untrained baselines and all four
+foundation model configurations produce forecasts that agree to the bit across seeds.
+Running a deterministic method under several seeds does not replicate it, and pooling
+the copies would multiply the sample size without adding information and would
+understate every p-value.
+
+All inference in the manuscript therefore runs on **distinct forecast origins from a
+single seed**, and every count reported here and in the manuscript is a count of
+distinct origins: 261 on ROBOD, 181 to 196 on HZMetro depending on horizon, and 300 on
+each simulator configuration. Some configurations list more than one seed. Those extra
+runs exist to make the determinism check possible, and `analysis.py` asserts it in
+`assert_seeds_are_replicates` before discarding them. No result in the manuscript is a
+three-seed result.
+
+### Results
+
+These are the results of the manuscript at the tag above, and no others. Relative
+improvements use one definition throughout: 100 (1 − L_A / L_B), the reduction in the
+loss of the better method A relative to the worse method B, with L the MASE unless
+another loss is named.
+
+**Real room occupancy, ROBOD, 261 origins, MASE (manuscript Table 2).** Two daily seasons
+of context.
 
 | Method | 5 min | 15 min | 30 min | 60 min |
 |---|---|---|---|---|
-| `toto2` | 0.181 | 0.338 | **0.396** \* | **0.458** \* |
-| `chronos2_multivariate` | 0.219 | 0.362 | 0.411 | 0.471 \* |
-| `timesfm3_univariate` | 0.199 | 0.353 | 0.414 | 0.483 \* |
-| `timesfm3_multivariate` | 0.189 | 0.364 | 0.437 | 0.515 \* |
-| `last_value` | **0.164** | 0.361 | 0.449 | 0.538 |
-| `seasonal_naive` | 0.716 | 0.777 | 0.769 | 0.753 |
-| `historical_average` | 0.773 | 0.832 | 0.827 | 0.815 |
+| Toto-2.0, zero-shot | 0.186 | **0.294** | **0.328** | **0.374** |
+| TimesFM-3 multivariate, zero-shot | 0.197 | 0.314 | 0.354 | 0.410 |
+| Chronos-2 multivariate, zero-shot | 0.217 | 0.326 | 0.361 | 0.411 |
+| TimesFM-3 univariate, zero-shot | 0.206 | 0.318 | 0.359 | 0.417 |
+| Last value | **0.164** | 0.361 | 0.449 | 0.538 |
+| LightGBM, as first specified | 0.263 | 0.439 | 0.517 | 0.601 |
+| LightGBM, per series, the strongest local model | 0.278 | 0.407 | 0.460 | 0.512 |
+| Historical average | 0.703 | 0.753 | 0.748 | 0.736 |
+| Seasonal naive | 0.758 | 0.819 | 0.811 | 0.796 |
 
-There is a crossover, and it is the point. At five minutes nothing beats persistence and
-no foundation model is significantly better than it; room occupancy does not move much in
-five minutes. By thirty minutes Toto is significantly ahead, and by an hour all four are,
-with Toto cutting CRPS from 0.508 to 0.373 — a 27% reduction in probabilistic error over
-the baseline a building already has. Coverage sits at 0.88–0.91 against a nominal 0.80, so
-the intervals are wide rather than overconfident.
-
-The seasonal baselines are far behind everything, which is a fact about ROBOD rather than
-about them: it was collected in weekday blocks around a two-month vacation hole, so "the
-same time yesterday" is often not a comparable day, or not a recorded one.
-
-**E7b — HZMetro, 160 real fare-gate flow series across 80 stations at fifteen minutes.**
-196 origins per seed of 233 enumerated. Of those, 181 score at fifteen minutes and all 196
-at two hours: a target window that lies entirely inside the overnight service gap has
-nothing to score against, and a longer window from the same origin reaches past it.
+**Real station flow, HZMetro, 181 to 196 origins, MASE (manuscript Tables 3 and 4).**
 
 | Method | 15 min | 30 min | 60 min | 120 min |
 |---|---|---|---|---|
-| `seasonal_naive` | 0.759 \* | **0.766** \* | **0.750** \* | **0.722** \* |
-| `timesfm3_multivariate` | **0.690** \* | 0.785 \* | 0.903 \* | 0.972 \* |
-| `timesfm3_univariate` | 0.720 \* | 0.793 \* | 0.898 \* | 0.963 \* |
-| `toto2` | 0.758 \* | 0.902 \* | 1.211 \* | 1.719 \* |
-| `historical_average` | 0.909 | 0.925 \* | 0.922 \* | 0.914 \* |
-| `last_value` | 0.901 | 1.098 | 1.484 | 2.015 |
-| `chronos2_multivariate` | 0.943 | 1.110 | 1.486 | 2.064 |
+| LightGBM, per series, the strongest local model | **0.493** | **0.504** | **0.506** | **0.511** |
+| TimesFM-3 univariate, zero-shot | 0.536 | 0.556 | 0.588 | 0.613 |
+| TimesFM-3 multivariate, zero-shot | 0.544 | 0.577 | 0.614 | 0.637 |
+| Chronos-2 multivariate, zero-shot | 0.594 | 0.627 | 0.691 | 0.779 |
+| Toto-2.0, zero-shot | 0.596 | 0.648 | 0.743 | 0.888 |
+| Seasonal naive | 0.764 | 0.772 | 0.757 | 0.731 |
+| LightGBM, as first specified | 0.792 | 0.873 | 1.006 | 1.135 |
+| Historical average | 0.881 | 0.897 | 0.891 | 0.880 |
+| Last value | 0.901 | 1.098 | 1.484 | 2.015 |
 
-The conclusion is the opposite one, and it is worth stating plainly: **on a strongly
-periodic signal, a seasonal baseline beats every zero-shot foundation model on point
-accuracy beyond fifteen minutes.** Metro ridership is driven by a timetable and a working
-week, so "the same time yesterday" is an excellent forecast and stays excellent as the
-horizon grows, while every foundation model degrades with it.
+What these two tables support:
 
-Two things qualify that. First, `seasonal_naive` emits intervals of almost zero width —
-its 80% coverage is 0.04 against a nominal 0.80 — so it supplies no usable uncertainty at
-all, and on CRPS TimesFM 3 beats it at 15, 30 and 60 minutes (24.8 against 29.1 at 30
-minutes). A method that is right on average and silent about its own error is not
-interchangeable with one that is calibrated. Second, TimesFM 3 stays within 30% of it on
-MASE at every horizon while also being calibrated, whereas Toto and Chronos-2 degrade
-sharply and end up at or below persistence at two hours.
+- **Against untrained baselines the foundation models win on both sites**, by 30.5% at
+  one hour on room occupancy and by 29.8% at fifteen minutes on metro flow.
+- **Against a properly specified local model the result splits by site.** On room
+  occupancy the best zero-shot model is ahead by 26.9% at one hour (0.374 against
+  0.512). On metro flow the local model is ahead by 16.6% at two hours (0.511 against
+  0.613). An earlier version of the manuscript gave the second figure as 28.9%; that
+  number was the excess of the larger paired MAE over the smaller and not a reduction in
+  MASE, and it has been withdrawn.
+- **The comparison against a seasonal baseline is decided by context length.** At one
+  daily season of context the foundation models lose on metro flow at two hours (MASE
+  1.037 against 0.774 on the origins common to the sweep); at two they win, and accuracy keeps improving to about seven
+  seasons (0.424) and fourteen (0.414), while the daily seasonal baseline does not move.
+- **Under a moving-block bootstrap that respects the overlap between origins**, the
+  interval for the foundation model's advantage over the seasonal baseline at the
+  longest metro horizon contains zero, at every block length from 5 to 40 origins. It
+  excludes zero only if the origins are treated as independent.
 
-So the honest summary of E7 is conditional rather than triumphal: zero-shot forecasting
-earns its place where the signal is smooth and aperiodic and a building has no usable
-seasonal baseline, and it does not displace a seasonal baseline where one exists.
+**Calibration and sharpness (manuscript Tables 7 and 8).** The foundation models are not
+better calibrated than the seasonal baseline, and that claim is withdrawn. On room
+occupancy the best foundation model's nominal 80% interval is half as wide as the
+seasonal one while covering more outcomes: 1.17 against 2.35 persons, at coverage 0.901
+against 0.839. To reach a common coverage near 90% the seasonal interval must be widened
+6.0 times when the factor is fitted on the evaluation observations and 8.4 times when it
+is estimated on a preceding calibration period. Exact matching at the nominal 80% is not
+attainable on that dataset, because 69.4% of the outcomes are zero and the coverage of
+every interval jumps as it reaches its published width. On metro flow a sharpness
+advantage appears when the factor is fitted retrospectively and is not established out
+of sample. An earlier version reported a 4.9-fold advantage at matched coverage; the
+scale factor behind it was estimated inconsistently with the coverage it was meant to
+match, and the figure has been withdrawn. CRPS, which needs no rescaling, favours the
+foundation models on both sites: 18.79 against 25.93 at one hour on metro flow.
 
-**Two later experiments change the reading of the table above, and the paper reports
-them rather than these numbers.** The HZMetro figures here were produced with a context
-of one daily season. E9 sweeps the context from one to fourteen seasons and shows that
-the comparison reverses between one and two, and that accuracy keeps improving to about
-seven, so the table above measures a configuration and not a property of the models.
-And E10 replaces the single globally pooled gradient-boosted model used here with one
-given daily and weekly seasonal lags, tuned hyper-parameters and a per-series fit; that
-model overtakes every foundation model on HZMetro while still losing on ROBOD. The
-manuscript's transferability claim is therefore stated per site: a competitive cold-start
-default, not a dominance result. Read `paper/.../main.tex` for the figures that supersede
-this section, or rebuild the tables yourself with `mflow report`.
+**Reconciliation, simulator only, 300 origins per configuration (manuscript Table 9).**
+MAE in persons; residual and bound are the conservation and the capacity or sign
+violations.
+
+| Reconciler | Residual | Bound | MAE | Residual | Bound | MAE |
+|---|---|---|---|---|---|---|
+| | *baseline* | | | *crowded* | | |
+| None (raw) | 1.055 | 0.006 | 0.3495 | 0.960 | 0.451 | 0.3654 |
+| MinT (shrink) | < 1e-9 | 2.062 | 0.3516 | < 1e-9 | 2.944 | 0.3676 |
+| Unbounded, uncertainty weighted | < 1e-9 | 1.414 | 0.3485 | < 1e-9 | 2.377 | 0.3652 |
+| Uniform weight | < 1e-9 | 0.000 | 0.3506 | < 1e-9 | 0.000 | 0.3661 |
+| **Proposed** | < 1e-9 | 0.000 | **0.3475** | < 1e-9 | 0.000 | **0.3633** |
+
+What the reconciliation study supports, and what it does not:
+
+- **Coherence and feasibility are exact**, by construction, for the projected median.
+  MinT restores conservation and breaks the capacity and sign bounds.
+- **The gain in mean error is small and is a statement about the mean.** For TimesFM-3
+  the mean MAE falls by 0.98%, with a 95% moving-block bootstrap interval of
+  [−1.41, −0.61]. At the typical origin the error rises very slightly: the median change
+  is +0.013%, with interval [+0.011, +0.015], and 211 of 300 origins worsen. Both
+  statements are established and they do not conflict, because the differences are
+  strongly skewed. For LightGBM no effect on the mean is established. The intervals are
+  stable to block lengths from 1 to 40 origins.
+- **The non-median quantiles are not coherent.** Translating them by the median
+  correction leaves a residual of up to 0.085 persons. Projecting each quantile
+  separately makes every level coherent and feasible, but the levels then cross on 11.3%
+  of adjacent pairs, and the rearrangement that restores their order leaves residuals of
+  0.003 to 0.012 persons, the median included. Quantile paths that are individually
+  admissible are not a coherent joint distribution.
+- **The risk-sensitive evidence is narrow.** The error in the magnitude of the predicted
+  peak falls by 6.3% on the baseline configuration and 4.0% on the crowded one, and
+  both reductions are statistically established. The detection of near-capacity and
+  at-capacity conditions is essentially unchanged, with hit rates moving by 0.2 to 1.3
+  percentage points and Brier scores by less than 0.001, and the error at high
+  occupancy is not consistently improved. A more accurate peak magnitude is not improved
+  identification of unsafe conditions, and neither is a demonstrated operational
+  benefit.
+
+### The configuration behind every table
+
+Every table and figure of the manuscript is generated from logged runs by `analysis.py`
+or `analysis_round2.py` in the analysis directory named above. The runs are produced by
+the configurations below, all in `configs/experiments/`.
+
+| Manuscript item | Configuration | Script |
+|---|---|---|
+| Table 1, evaluation sites and seasonal strength | the canonical sites built by `scripts/fetch_robod.py`, `scripts/fetch_pvcgn.py` and `configs/sites/house_museum.yaml` | `analysis.py` |
+| Table 2, ROBOD | `E8_robod.yaml` | `analysis.py` |
+| Table 3, HZMetro | `E8_hzmetro.yaml` | `analysis.py` |
+| Table 4, gradient-boosted ladder | `E10_lightgbm_hzmetro.yaml`, `E10_lightgbm_robod.yaml` | `analysis.py`; restated by `analysis_round2.py` |
+| Table 5, one against two seasons of context | `E7_hzmetro.yaml` (one season), `E8_hzmetro.yaml` (two) | `analysis.py` |
+| Table 6, context sweep | `E9_hzmetro_c{96,192,288,672,1344}.yaml`, `E9_robod_bldg1_c{288,576,864,2016,4032}.yaml` | `analysis.py` |
+| Within-dataset test of H2 | `E8_hzmetro.yaml` | `analysis.py` |
+| Table 7, coverage and width as published | `E8_robod.yaml`, `E8_hzmetro.yaml` | `analysis.py` |
+| Table 8, width at matched coverage | `E8_robod.yaml`, `E8_hzmetro.yaml` | `analysis_round2.py` |
+| Table 9, reconciliation | `E11_efficiency_sim.yaml` (variant `d090`), `E12_crowded.yaml` | `analysis.py` |
+| Table 10, ablations | the same two | `analysis.py` |
+| Tables 11 and 12, mean and typical-origin effects, block length | the same two | `analysis_round2.py` |
+| Table 13, risk-sensitive quantities | the same two | `analysis_round2.py` |
+| Table 14, coherence by quantile level | `E11_efficiency_sim.yaml` (variant `d090`) | `analysis.py` for the shift rows, `analysis_round2.py` for the per-quantile rows |
+| Table 15, sensitivity to the spread estimate | `E11_efficiency_sim.yaml` (variant `d090`) | `analysis.py` |
+| Table 16, dependence between origins | `E8_robod.yaml`, `E8_hzmetro.yaml` | `analysis.py` |
+| Data-efficiency figure | `E11_efficiency_sim.yaml`, `E11_efficiency_robod.yaml` | `analysis.py` |
+| Simulator profile figure | `configs/sites/house_museum.yaml`, `configs/sites/house_museum_crowded.yaml` | `analysis.py` |
+
+The reconcilers of Tables 9 to 15 are not separate runs. The forecasters are run once,
+with `reconcilers: [none]`, and every reconciler is then applied offline to the stored
+quantile forecasts, so that all arms see identical inputs.
+
+### Analyses added in the second revision
+
+```bash
+cd paper/Topology_Constrained_Reconciliation_for_Zero_Shot_Forecastingof_Occupancy_and_Flow
+python analysis.py           # first: writes summary.json and the per-origin tables
+python analysis_round2.py    # then: writes summary_round2.json and tables/round2_*.csv
+python verify_round2.py      # checks the manuscript text against summary_round2.json
+```
+
+`analysis_round2.py` runs no forecaster. It recomputes, from the predictions that the
+logged runs already wrote, the five analyses that the second review asked for:
+
+1. interval width at matched empirical coverage, with the scale factor and the coverage
+   computed on the same observations by the same rule, and repeated with the factor
+   estimated on a calibration period that precedes the evaluation period;
+2. the gradient-boosted comparison under the single definition of relative improvement
+   given above;
+3. the reconciliation effect at the mean and at the typical origin separately, with a
+   sign test, a bootstrap interval for the median, and the sensitivity of every interval
+   to the bootstrap block length, including the interval of the headline real-data test,
+   where serial dependence between origins is strong;
+4. conservation residuals under per-quantile projection, before and after the monotone
+   rearrangement that repairs quantile crossings;
+5. peak error, error at high occupancy, and the detection of near-capacity and
+   at-capacity conditions, with thresholds and sample sizes.
+
+`verify_round2.py` rebuilds every row of the new tables and every number quoted in the
+revised text from `summary_round2.json`, formats each as it is printed, and fails if any
+of them is absent from the manuscript source. `verify_numbers.py` does the same for the
+numbers of the first revision, against `main.tex`. `summary_round2.json` and `tables/round2_*.csv` are
+committed, so the check can be run without the model weights or the datasets.
 
 ---
 
@@ -216,13 +354,13 @@ forecaster during evaluation, and it physically cannot return anything at or aft
 origin. Normalisation statistics are never computed from the full series.
 
 **5. Fail loudly.** No bare `except`, no silent fallbacks. A forecaster that raises stops
-the run rather than being skipped — a results table with a quietly missing method invites
+the run rather than being skipped: a results table with a quietly missing method invites
 exactly the wrong conclusion. Where data must be imputed, the run records where: when a
 sensor dropout forces the conservation anchor to be carried forward, the number of steps
 it was carried appears in `reconciliation.parquet` as `anchor_staleness_steps`.
 
 **6. Typed, linted, tested.** Python 3.11+, type hints on every public function, `ruff`
-and `mypy --strict`-adjacent clean, 380 tests.
+and `mypy --strict`-adjacent clean, 424 tests.
 
 ---
 
@@ -252,7 +390,7 @@ pip install -e ".[toto]"         # Toto 2.0
 ```
 
 Everything except the foundation models works without them, including the whole
-simulator, the reconciler, the harness and all seven experiment configs in `--dry-run`.
+simulator, the reconciler, the harness and every experiment config in `--dry-run`.
 
 ### Hugging Face credentials
 
@@ -263,7 +401,7 @@ HUGGINGFACE_API_KEY=hf_...
 ```
 
 It is gitignored and must stay that way. `mflow.cli.load_environment()` reads it at
-start-up and prints only the *names* of the keys it found — the token is never returned,
+start-up and prints only the *names* of the keys it found; the token is never returned,
 logged, or written into a manifest. Gated repositories need it; public ones do not.
 
 ---
@@ -284,7 +422,7 @@ mflow run configs/experiments/smoke.yaml --allow-dirty
 # 4. Build the tables from whatever has been run. Once results/ holds more than one
 #    experiment, name the one you want: a horizon is a number of steps, and a step is
 #    five minutes on ROBOD and fifteen on HZMetro.
-mflow report --experiment E7_robod --output paper/E7_robod
+mflow report --experiment E8_robod --output paper/E8_robod
 ```
 
 Then plan a real experiment before paying for it:
@@ -299,7 +437,7 @@ which prints every site, seed, variant and method-by-reconciler cell it will exe
 
 ## The canonical data contract
 
-Every site — simulated or real — is a directory with the same seven files. Nothing
+Every site, simulated or real, is a directory with the same seven files. Nothing
 downstream knows or cares where a site came from.
 
 ```
@@ -329,7 +467,7 @@ it on load, so a site that violates it cannot enter the pipeline.
 **Counts are nullable integers on disk and floats in memory.** People are countable, so a
 float column on disk would invite silently fractional occupancy. But a sensor that drops
 out has no reading at all, and that gap has to survive the round trip rather than become
-a zero — so in memory a missing reading is a plain `NaN` that every consumer already
+a zero, so in memory a missing reading is a plain `NaN` that every consumer already
 knows how to see.
 
 A forecaster never sees a `SiteData`. It sees a frozen `Panel`: a `(n_series, T)` float32
@@ -359,7 +497,7 @@ src/mflow/
 └── data/                  external dataset acquisition and adapters
 ```
 
-### M1 — schema and graph
+### M1: schema and graph
 
 `schema.py` is the contract and its validator. The validator is not a formality: it
 checks the time grid is regular and complete, that every reference resolves, that counts
@@ -367,19 +505,19 @@ are non-negative and within capacity, that covariates cover the grid, and that
 conservation holds to tolerance. It reports the worst offending node and timestamp rather
 than just failing.
 
-### M2 — the simulator
+### M2: the simulator
 
 A graph-level discrete-event simulator. Visitors arrive by a non-homogeneous Poisson
 process shaped by opening hours and day of week, are assigned a **visiting style** from
-the Véron & Levasseur (1983) typology — ant, fish, butterfly, grasshopper, as
-operationalised by Zancanaro et al. (2007) — and draw log-normal dwell times per room
+the Véron & Levasseur (1983) typology (ant, fish, butterfly, grasshopper, as
+operationalised by Zancanaro et al. (2007)) and draw log-normal dwell times per room
 (Yoshimura et al., 2014). Groups move together.
 
 The interesting part is the doorway resolution, which took three attempts to get right.
 Within one tick, every doorway is served simultaneously: grants are relaxed bottom-up
 from available headroom to a fixed point, and then opposing demand on each doorway is
 matched so that two full rooms can trade occupants. Without that exchange pass a
-saturated building gridlocks — two adjacent full rooms can never swap visitors, and
+saturated building gridlocks: two adjacent full rooms can never swap visitors, and
 agents strand permanently. The earlier top-down scheme (cut inflows to over-capacity
 nodes) is worse than useless: cutting an inflow to `v` reduces the outflow of `u`, which
 then over-fills, and the recursion converges on the all-zero solution.
@@ -392,10 +530,10 @@ fails if the simulation falls outside them.
 **Tier B (JuPedSim continuous-space) is not implemented.** The specification marks it
 optional, and writing it against an unverified API would breach ground rule 1.
 
-### M3 — sensor degradation
+### M3: sensor degradation
 
 Real museum instrumentation is bad in specific, documented ways, and every parameter here
-comes from a published error rate cited in the docstring of the module that uses it — not
+comes from a published error rate cited in the docstring of the module that uses it, not
 from invention.
 
 - **Counting** (`counting.py`): a fixed per-sensor multiplicative bias drawn once, plus a
@@ -412,7 +550,7 @@ from invention.
   rule 5 forbids imputing without saying where.
 
 Two modelling points worth stating. First, a crowded room can see relative humidity
-*fall* as moisture rises, because the air warms faster than it moistens — the code gets
+*fall* as moisture rises, because the air warms faster than it moistens; the code gets
 this right and a test asserts the humidity *ratio*, not the RH. Second, the profiles carry
 an `hvac_rejection_fraction`: a heritage museum controls temperature and humidity tightly
 for the collection's sake, which is exactly what makes those two channels weak occupancy
@@ -423,11 +561,11 @@ Four profiles: `clean`, `realistic`, `degraded`, `harsh`.
 
 The known failure mode is documented and tested: in a sparsely occupied room the CO2
 signal is sensor noise. The museum shop averages 0.18 occupants and its CO2 correlates at
-0.58 with a lag of 8 minutes — which is why the M3 acceptance test uses the **median** lag
+0.58 with a lag of 8 minutes, which is why the M3 acceptance test uses the **median** lag
 across rooms, matching the building-level framing of the occupancy-sensing literature, and
 gates the per-room correlation on occupancy spread.
 
-### M4 — forecasters
+### M4: forecasters
 
 One abstract base class, one registry, one factory. An experiment config names a method as
 a string and the harness never imports a model class. Heavy dependencies are imported
@@ -449,8 +587,8 @@ Two things that check turned up, both of which a mocked test would have missed:
 
 - **Chronos names its series in a column called `target_name`, not `target`.** The
   wrapper used to probe for `target` and, on not finding it, hand every series the first
-  series' rows. Nothing complained — the frame had the right number of rows and the
-  quantiles were monotone — and the only symptom was a multivariate MAE 2.6× the
+  series' rows. Nothing complained (the frame had the right number of rows and the
+  quantiles were monotone) and the only symptom was a multivariate MAE 2.6× the
   univariate one. The column is now required rather than probed, so the same class of
   mismatch stops the run instead of producing a plausible wrong number.
 - **Chronos cannot take a timezone-aware timestamp column**, because it normalises one
@@ -458,7 +596,7 @@ Two things that check turned up, both of which a mocked test would have missed:
   column exists only to establish order and spacing, and nothing it returns is a
   timestamp.
 
-### M5 — topology-constrained reconciliation
+### M5: topology-constrained reconciliation
 
 A forecaster produces each series independently, so nothing makes its occupancy and flow
 predictions agree with the physics of the building. This is the paper's contribution.
@@ -485,7 +623,7 @@ box constraints, so it can push a forecast to a negative headcount or past a roo
 capacity, while the proposed projection cannot; and the projection verifies its own
 residual after solving, so an inaccurate OSQP status is backstopped rather than trusted.
 
-### M6 — evaluation
+### M6: evaluation
 
 **Protocol** (`protocol.py`). Rolling origin, fixed context length, origins every `stride`
 steps through the test window, horizons reported as prefixes of a single forecast so the
@@ -498,8 +636,8 @@ interval width, `conservation_residual_mae`, `violation_rate`, `quantile_crossin
 plus `latency_ms` and `peak_memory_mb` measured *by the harness* rather than self-reported
 by each wrapper, so the numbers are comparable across methods.
 
-One decision worth flagging: a series whose seasonal-naive denominator is zero — a store
-cupboard that is empty every day — gets `NaN`, not a floored denominator. Flooring at
+One decision worth flagging: a series whose seasonal-naive denominator is zero, such as a store
+cupboard that is empty every day, gets `NaN`, not a floored denominator. Flooring at
 `1e-6` produced MASE values in the hundreds of thousands and silently dominated the mean.
 Such series are excluded from MASE, and if none remain the metric raises.
 
@@ -514,21 +652,21 @@ telling you to shorten the stride. The reporting layer turns that into an explic
 in the table with the reason attached, because **"we tested and found nothing" and "we
 could not test" must not look the same in a manuscript**.
 
-**Harness** (`harness.py`). Runs the plan, scores per origin (not just aggregated — the
+**Harness** (`harness.py`). Runs the plan, scores per origin (not just aggregated; the
 paired series cannot be recovered from an average), and writes tidy frames.
 
 **Risk heads** (`risk/`). Congestion alerting against a reactive baseline; anomaly
 detection at a pinned false-alarm budget; and exposure accounting. The exposure head
-reports **a formulation and a worked example only** — no dataset links visitor load to a
+reports **a formulation and a worked example only**: no dataset links visitor load to a
 conservation outcome, so there is no validation claim to make, and the caveat travels in a
 column of the output so a table cannot strip it.
 
 **Reporting** (`report.py`). Reads `results/`, writes every table as both CSV and LaTeX and
-every figure as both PDF and PNG. Paired tests key on the full occasion — run, site, seed,
-variant and origin — so pooling runs cannot collapse origin 34566 of two different sites
+every figure as both PDF and PNG. Paired tests key on the full occasion (run, site, seed,
+variant and origin), so pooling runs cannot collapse origin 34566 of two different sites
 into one row.
 
-### M7 — experiments
+### M7: experiments
 
 An experiment is a YAML file naming sites, methods, reconcilers, a protocol, and the
 *variants* that make it an experiment: the sensor profiles of E5, the training budgets of
@@ -552,7 +690,7 @@ results/<experiment>_<site>_<variant>_s<seed>/
 ```
 
 The manifest is written first on purpose. A run that crashes leaves a directory with a
-manifest and no metrics, which `load_runs` skips — so the difference between "this
+manifest and no metrics, which `load_runs` skips, so the difference between "this
 finished" and "this was attempted" survives on disk, and a partial sweep can never be
 reported as a complete one.
 
@@ -568,7 +706,7 @@ Two guards exist because real data forced them. `require_observed` drops origins
 context or target is too empty to evaluate, recording the count and the reason in the
 manifest; it is off for simulated sites, where a dropped origin would mean a bug rather
 than a hole in the record. And a site that measures no doorway flow cannot be reconciled
-at all — the run stops rather than projecting onto a constraint assembled entirely from
+at all: the run stops rather than projecting onto a constraint assembled entirely from
 the forecaster's own predictions.
 
 ---
@@ -597,20 +735,23 @@ relocates the whole project tree.
 `scripts/fetch_<name>.py` that downloads into `data/raw/<name>/`, records the download
 date and a checksum, and then invokes its adapter to write `data/canonical/<site_id>/`.
 
+Only the first two sources below have adapters and are used in the manuscript. The
+others were considered in the original design, have no adapter, and supply no result.
+
 | Source | Role | Where |
 |---|---|---|
-| ROBOD | Real room-level occupancy with CO2, temperature, humidity — the closest public analogue to museum instrumentation | [github.com/ideas-lab-nus/robod](https://github.com/ideas-lab-nus/robod), figshare 19234530 |
-| HZMetro / SHMetro | A real closed graph with a conservation identity of exactly the assumed form, at a scale no museum dataset reaches | [github.com/HCPLab-SYSU/PVCGN](https://github.com/HCPLab-SYSU/PVCGN) |
-| Melbourne pedestrian counting | Real directional counts, hourly and per-minute | City of Melbourne open data; Zenodo 4656626 snapshot |
-| METR-LA / PEMS-BAY | Used **only** to validate the graph baselines against their published numbers | [github.com/liyaguang/DCRNN](https://github.com/liyaguang/DCRNN) |
-| ATC indoor tracking | Indoor pedestrian trajectories in a large public building | [dil.atr.jp](https://dil.atr.jp) |
-| Museum UWB | Indoor positioning in an actual museum | Zenodo 14918763 |
+| ROBOD | Real room-level occupancy with CO2, temperature, humidity; the closest public analogue to museum instrumentation | [github.com/ideas-lab-nus/robod](https://github.com/ideas-lab-nus/robod), figshare 19234530 |
+| HZMetro / SHMetro | Real directional station flow at a scale no building dataset reaches. It supplies flow only, not occupancy; see the limitation below | [github.com/HCPLab-SYSU/PVCGN](https://github.com/HCPLab-SYSU/PVCGN) |
+| Melbourne pedestrian counting | Not used. Real directional counts, hourly and per-minute | City of Melbourne open data; Zenodo 4656626 snapshot |
+| METR-LA / PEMS-BAY | Not used. Intended only to validate the graph baselines against their published numbers | [github.com/liyaguang/DCRNN](https://github.com/liyaguang/DCRNN) |
+| ATC indoor tracking | Not used. Indoor pedestrian trajectories in a large public building | [dil.atr.jp](https://dil.atr.jp) |
+| Museum UWB | Not used. Indoor positioning in an actual museum | Zenodo 14918763 |
 
 HZMetro is a transport network, not a museum. It is included for the scale of its real
 directional flow; no claim about visitor behaviour in heritage settings rests on it, and
 its config says so.
 
-### A limitation worth stating before the results
+### A limitation that bounds the reconciliation claim
 
 **No public dataset in this project measures room occupancy and doorway flow at the same
 time.** ROBOD counts people in rooms and nothing at the doorways; PVCGN counts fare-gate
@@ -620,29 +761,30 @@ projecting onto a constraint assembled partly from the forecaster's own predicti
 the coherence residual it reported would measure the forecaster's self-consistency rather
 than its agreement with the building.
 
-The runner enforces this rather than leaving it to a reader to notice — asking for any
+The runner enforces this rather than leaving it to a reader to notice: asking for any
 reconciler but `none` on such a site is an error. The consequence is that **the
-reconciliation claim rests on simulation (E4 and E12) and is not corroborated on real data.**
+reconciliation claim rests on simulation (E11 and E12) and is not corroborated on real data.**
 
 The specification assumed HZMetro would corroborate it, describing it as "a closed graph
 with a conservation identity of exactly the assumed form". Reading the release rather
 than assuming it, that is not the case: closing the identity at a station needs the flows
 *between* stations, which is the origin–destination matrix, and PVCGN does not publish
-one. The obvious workaround — occupancy as the running total of entries minus exits — was
+one. The obvious workaround, occupancy as the running total of entries minus exits, was
 tried and rejected on the evidence: it goes negative at 76 of Hangzhou's 80 stations,
 reaching −26,068, because a commuter station discharges far more people in the morning
 than it takes in. A quantity that is routinely negative is not a count of people in a
 room.
 
-Closing this gap needs a source carrying trajectories, from which occupancy and crossings
-can be derived consistently from the same observations. The ATC indoor tracking release is
-the candidate, and it is the outstanding item in the status table below.
+Closing this gap needs a building in which doorway crossings and room occupancy are
+measured independently of each other. The ATC indoor tracking release is the nearest
+public candidate, and the status table below explains why it is not sufficient. Validation
+on such a site is the manuscript's principal item of future work.
 
 ### ROBOD
 
 ```bash
 python scripts/fetch_robod.py     # ~20 MB, writes data/canonical/robod_bldg1/
-mflow run configs/experiments/E7_robod.yaml
+mflow run configs/experiments/E8_robod.yaml
 ```
 
 Five rooms of the SDE4 building at the National University of Singapore, camera-counted
@@ -670,7 +812,7 @@ number that comes out of it, and all three are recorded in the site's `meta.prov
 
 ```bash
 python scripts/fetch_pvcgn.py    # ~32 MB, writes data/canonical/hzmetro/
-mflow run configs/experiments/E7_hzmetro.yaml
+mflow run configs/experiments/E8_hzmetro.yaml
 ```
 
 Eighty Hangzhou metro stations at fifteen minutes, giving 160 measured flow series and a
@@ -683,9 +825,9 @@ README describes the last axis as `(inflow/outflow)`, which reads as channel 0 b
 entries. **The data says the reverse**, and since the conservation constraint's sign
 depends on it, it was checked rather than assumed. Across the whole Hangzhou record:
 
-- in the first interval of the service day channel 0 sums to 29 and channel 1 to 240 —
+- in the first interval of the service day channel 0 sums to 29 and channel 1 to 240:
   nobody alights before anybody has boarded, so channel 1 is entries;
-- in the last interval channel 0 sums to 1,495 and channel 1 to 118 — the last trains
+- in the last interval channel 0 sums to 1,495 and channel 1 to 118: the last trains
   emptying out after entry has stopped;
 - within every service day the running total of channel 1 leads that of channel 0, and
   the two converge to within 0.37% by close of service.
@@ -705,11 +847,11 @@ yet, so it is off by default.
 Every logged run is reproducible from its manifest:
 
 ```bash
-mflow reproduce results/E1_sim_house_museum_default_s0
+mflow reproduce results/E8_robod_robod_bldg1_default_s0
 ```
 
 which prints either `this environment reproduces it exactly` or a list of every
-difference — config hash, seed, commit, and any of the fifteen tracked package versions.
+difference: config hash, seed, commit, and any of the fifteen tracked package versions.
 
 The seeding discipline: `mflow.manifest.rng(seed, *stream)` derives each component's
 generator from the run seed and a stable stream name via BLAKE2b, so adding a component
@@ -726,7 +868,7 @@ mypy src
 pytest
 ```
 
-The suite is 380 tests and runs in about twenty-five seconds. Tests needing downloaded
+The suite is 424 tests and runs in about twenty seconds. Tests needing downloaded
 weights or fetched datasets are opt-in:
 
 ```bash
@@ -750,31 +892,35 @@ only parses when told to target 3.12 or later.
 |---|---|
 | M1 canonical contract, graph, validation | complete |
 | M2 Tier A simulator, three sites | complete |
-| M2 Tier B JuPedSim | **not implemented** — optional in the specification; writing it against an unverified API would breach ground rule 1 |
+| M2 Tier B JuPedSim | **not implemented**; optional in the specification, and writing it against an unverified API would breach ground rule 1 |
 | M3 sensor degradation, four profiles | complete |
-| M4 forecaster interface and implementations | complete — all four foundation wrappers verified against their real checkpoints |
+| M4 forecaster interface and implementations | complete; all four foundation wrappers verified against their real checkpoints |
 | M5 reconciliation | complete |
 | M6 protocol, metrics, significance, harness, risk heads, reporting | complete |
 | M7 experiment configs E1–E12, runner, CLI | complete |
 | Dataset acquisition framework (download, checksums, provenance, adapter base) | complete |
-| ROBOD adapter and `scripts/fetch_robod.py` | complete — `E7_robod` runs end to end |
-| PVCGN adapter and `scripts/fetch_pvcgn.py` | complete — `E7_hzmetro` runs end to end |
-| **Executed** | E4, E7a, E7b, E8, E9, E10, E11, E12 — all logged under `results/`; see the registry above |
-| E2 covariate ablation executed | **not yet run** — no claim in the paper depends on it |
-| E5 sensor degradation executed | **not yet run** — no claim in the paper depends on it |
-| E6 decision utility executed | **not yet run** — no claim in the paper depends on it |
-| A real site measuring occupancy **and** flow | **not started** — the gap that leaves the reconciliation claim resting on simulation, and the manuscript's principal item of future work. ATC indoor tracking is the nearest candidate but supplies no occupancy measurement independent of the tracking, so it cannot test the constraint without circularity. What is needed is synchronised doorway counting plus a separate per-room occupancy estimate. |
+| ROBOD adapter and `scripts/fetch_robod.py` | complete; `E7_robod` and `E8_robod` run end to end |
+| PVCGN adapter and `scripts/fetch_pvcgn.py` | complete; `E7_hzmetro` and `E8_hzmetro` run end to end |
+| **Executed** | E4, E7, E8, E9, E10, E11, E12; all logged under `results/`. The manuscript reports E8 to E12, and E7 only for the one-season column of its Table 5; see the registry above |
+| E1 and E3 as separate experiments | **not run**; their questions are answered by E11 and E12 |
+| E2 covariate ablation executed | **not run**; no claim in the paper depends on it |
+| E5 sensor degradation executed | **not run**; no claim in the paper depends on it |
+| E6 decision utility executed | **not run**; no claim in the paper depends on it |
+| A real site measuring occupancy **and** flow | **not started**; this is the gap that leaves the reconciliation claim resting on simulation, and the manuscript's principal item of future work. ATC indoor tracking is the nearest candidate but supplies no occupancy measurement independent of the tracking, so it cannot test the constraint without circularity. What is needed is synchronised doorway counting plus a separate per-room occupancy estimate. |
 | Melbourne, UWB, DCRNN adapters | **not started** |
 
 The simulated sites in `data/canonical/` are generated, not committed. Build them with:
 
 ```bash
-mflow simulate configs/sites/house_museum.yaml --days 480 --seed 0
-mflow simulate configs/sites/palazzo.yaml      --days 120 --seed 0
-mflow simulate configs/sites/national.yaml     --days 120 --seed 0
+mflow simulate configs/sites/house_museum.yaml         --days 480 --seed 0
+mflow simulate configs/sites/house_museum_crowded.yaml --days 120 --seed 0
+mflow simulate configs/sites/palazzo.yaml              --days 120 --seed 0
+mflow simulate configs/sites/national.yaml             --days 120 --seed 0
 ```
 
-The house museum gets 480 days because E4 needs it: its 30- and 90-day training budgets
+The first two are the baseline and the crowded configuration of the reconciliation study
+(E11 and E12). The house museum gets 480 days because the training-budget sweep needs
+it: its 30- and 90-day training budgets
 require windows at least that long, which under the default 0.6/0.2/0.2 split means a
 record of 450 days. The runner refuses a budget the record cannot meet rather than
 truncating it, so a short site fails at the first run instead of producing a curve that
@@ -798,8 +944,8 @@ because timing a single origin gives an answer that is wrong by that much: Toto'
 call takes 4.3 s and its second takes 0.13 s. A sweep amortises the warm-up over thousands
 of origins, so only the right-hand column matters for planning.
 
-On those numbers the whole of E1–E7 is roughly 78 hours uncapped, or 48 hours with
-`max_origins: 480`. The protocol thins evenly, so a capped run is a uniform subsample of
+On those numbers the original plan of E1 to E7 was estimated at roughly 78 hours
+uncapped, or 48 hours with `max_origins: 480`. The protocol thins evenly, so a capped run is a uniform subsample of
 the same window rather than a different one. `ProtocolConfig.check_origin_budget` warns
 when a cap leaves too few origins for a Diebold–Mariano test at the longest horizon,
 which at `horizon: 60` needs about 122.
@@ -810,15 +956,17 @@ which at `horizon: 60` needs about 122.
 
 Licence: Apache-2.0. See `LICENSE`.
 
-The paper is in preparation. Until it appears, cite the software:
+The manuscript is under review. Until it appears, cite the software, and name the tag
+`manuscript-r2` if you refer to the results reported above:
 
 ```bibtex
 @software{anbarjafari_zeroshot_fmf,
   author  = {Anbarjafari, Shahab},
-  title   = {Zero-Shot Foundation Model Forecasting of Visitor Flow in Heritage
-             Museums with Topology-Constrained Reconciliation},
-  year     = {2026},
-  url      = {https://github.com/001shahab/zero-shot-FMF}
+  title   = {Topology-Constrained Reconciliation for Zero-Shot Forecasting of
+             Building Occupancy and Doorway Flow},
+  year    = {2026},
+  version = {manuscript-r2},
+  url     = {https://github.com/001shahab/zero-shot-FMF}
 }
 ```
 
