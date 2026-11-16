@@ -24,7 +24,7 @@ The project began as a study of heritage museums, and the simulator and several 
 names still say so. No real museum data was available, so the manuscript makes no claim
 about museums: its real-data evidence is room occupancy in an office and laboratory
 building and station flow in a metro network, and its reconciliation evidence is
-simulated. The title was changed in the first revision to say what the evidence covers.
+simulated. The title of the manuscript says what the evidence covers.
 
 ---
 
@@ -71,14 +71,9 @@ simulated. The title was changed in the first revision to say what the evidence 
 | Analysis scripts and logged summaries | `paper/Topology_Constrained_Reconciliation_for_Zero_Shot_Forecastingof_Occupancy_and_Flow/` |
 | Experiment configurations | `configs/experiments/` |
 
-Everything in this file describes the repository at that tag. A reviewer of the first
-revision found that the public branch still carried the documentation of the original
-submission: it described most experiments as not executed, it reported results that the
-manuscript had since superseded, and it referred to three seeds. The observation was
-correct. The corrections had been made in a working copy and had not been published.
-This file is the corrected statement, and the tag exists so that the version a reader
-checks is unambiguous. The earlier results are not repeated here; they remain in the
-commit history.
+Everything in this file describes the repository at that tag, and the tag exists so that
+the version a reader checks is unambiguous. Results of earlier versions are not repeated
+here; they remain in the commit history.
 
 `paper/Topology_Constrained_Reconciliation_for_Zero_Shot_Forecastingof_Occupancy_and_Flow/main.tex`
 is the preprint-format source of an earlier version and is kept only for the record. The
@@ -195,9 +190,8 @@ What these two tables support:
 - **Against a properly specified local model the result splits by site.** On room
   occupancy the best zero-shot model is ahead by 26.9% at one hour (0.374 against
   0.512). On metro flow the local model is ahead by 16.6% at two hours (0.511 against
-  0.613). An earlier version of the manuscript gave the second figure as 28.9%; that
-  number was the excess of the larger paired MAE over the smaller and not a reduction in
-  MASE, and it has been withdrawn.
+  0.613). Each figure is the reduction in MASE of the better method relative to the
+  worse.
 - **The comparison against a seasonal baseline is decided by context length.** At one
   daily season of context the foundation models lose on metro flow at two hours (MASE
   1.037 against 0.774 on the origins common to the sweep); at two they win, and accuracy keeps improving to about seven
@@ -208,7 +202,7 @@ What these two tables support:
   excludes zero only if the origins are treated as independent.
 
 **Calibration and sharpness (manuscript Tables 7 and 8).** The foundation models are not
-better calibrated than the seasonal baseline, and that claim is withdrawn. On room
+better calibrated than the seasonal baseline. On room
 occupancy the best foundation model's nominal 80% interval is half as wide as the
 seasonal one while covering more outcomes: 1.17 against 2.35 persons, at coverage 0.901
 against 0.839. To reach a common coverage near 90% the seasonal interval must be widened
@@ -217,9 +211,7 @@ is estimated on a preceding calibration period. Exact matching at the nominal 80
 attainable on that dataset, because 69.4% of the outcomes are zero and the coverage of
 every interval jumps as it reaches its published width. On metro flow a sharpness
 advantage appears when the factor is fitted retrospectively and is not established out
-of sample. An earlier version reported a 4.9-fold advantage at matched coverage; the
-scale factor behind it was estimated inconsistently with the coverage it was meant to
-match, and the figure has been withdrawn. CRPS, which needs no rescaling, favours the
+of sample. CRPS, which needs no rescaling, favours the
 foundation models on both sites: 18.79 against 25.93 at one hour on metro flow.
 
 **Reconciliation, simulator only, 300 origins per configuration (manuscript Table 9).**

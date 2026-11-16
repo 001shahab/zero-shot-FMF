@@ -235,11 +235,7 @@ def quoted_values(summary: dict[str, Any], first: dict[str, Any]) -> list[tuple[
     )
     add(
         "HZMetro MAE reduction",
-        rf"is \SI{{{hz['mae_reduction_winner_vs_loser_percent']:.1f}}}{{\percent}}, and on the per-series MASE",
-    )
-    add(
-        "HZMetro MAE excess",
-        rf"gave this advantage as \SI{{{hz['mae_excess_loser_over_winner_percent']:.1f}}}{{\percent}}",
+        rf"a reduction of \SI{{{hz['mae_reduction_winner_vs_loser_percent']:.1f}}}{{\percent}} under definition",
     )
     add(
         "HZMetro paired MAE",
@@ -307,10 +303,6 @@ def quoted_values(summary: dict[str, Any], first: dict[str, Any]) -> list[tuple[
         rf"Historical average has \SI{{{100 * robod80['historical_average']['fraction_uncoverable']:.1f}}}{{\percent}} of outcomes",
     )
     add(
-        "seasonal positive-width share",
-        rf"\SI{{{100 * (1 - robod80['seasonal_naive']['fraction_degenerate']):.0f}}}{{\percent}} of them",
-    )
-    add(
         "HZMetro endpoint ceiling",
         rf"at most \SI{{{100 * max(v['fraction_on_endpoint'] for v in hz80.values()):.1f}}}{{\percent}} of outcomes lie on an endpoint",
     )
@@ -340,12 +332,6 @@ def quoted_values(summary: dict[str, Any], first: dict[str, Any]) -> list[tuple[
         rf"\num{{{sn90['expanding_coverage'] - tfm90['expanding_coverage']:.3f}}} less",
     )
 
-    old = first["calibration"]["robod"]
-    add(
-        "earlier table, coverage after rescaling",
-        rf"it gave \num{{{old['seasonal_naive']['coverage_after_rescaling']:.3f}}} for seasonal naive and "
-        rf"\num{{{old['toto2']['coverage_after_rescaling']:.3f}}} for Toto-2.0",
-    )
     regression = next(r for r in first["within_dataset_regression"] if "hzmetro" in r["experiment"])
     add("rank correlation p-value", rf"$p=\num{{{regression['spearman_p']:.3f}}}$ taken alone")
     add(

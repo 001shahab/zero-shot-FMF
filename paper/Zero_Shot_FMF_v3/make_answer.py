@@ -143,6 +143,15 @@ CONTENT: list[Block] = [
             "**Marking.** Changes made in this round are in red. The changes of the first "
             "revision, which were red in the previous version, are now in black, so that "
             "red marks only what is new.",
+            "**No revision history in the manuscript.** The manuscript states methods, "
+            "results and limitations only. Sentences that described earlier versions, "
+            "the review process or what had been changed, including those introduced in "
+            "the first revision, have been removed or rewritten as plain statements of "
+            "the result. Rewritten wording is in red; a removed sentence leaves no mark. "
+            "No number and no conclusion is affected. For the same reason the first row "
+            "of the gradient-boosted ladder in Table 4, formerly labelled \u201cas "
+            "submitted\u201d, is now labelled \u201cglobal\u201d. The account of what "
+            "was wrong, and why, is given in this response only.",
             "**Numbering.** Section numbers are unchanged. Three tables have been added "
             "in Section 7.7 (Tables 11, 12 and 13), so the later tables are renumbered: "
             "the table of coherence by quantile level, which the reviewer cites as Table "
@@ -153,7 +162,7 @@ CONTENT: list[Block] = [
             "**Provenance of the new numbers.** No forecaster was rerun. Every number "
             "added in this round is recomputed from the predictions logged for the first "
             "revision by one script, `analysis_round2.py`, which writes "
-            "`summary_round2.json`. A second script, `verify_round2.py`, rebuilds 126 "
+            "`summary_round2.json`. A second script, `verify_round2.py`, rebuilds 123 "
             "table rows and quoted values from that file, formats each as it is printed, "
             "and fails if any of them is absent from the manuscript source. Running the "
             "analysis twice reproduces the summary file byte for byte.",
@@ -302,8 +311,8 @@ CONTENT: list[Block] = [
     Para(
         "The foundation models remain zero-shot in both out-of-sample schemes: a single "
         "scalar per method is estimated, never from the observations on which it is "
-        "evaluated. The new paragraph \u201cWhere the factors come from\u201d in Section "
-        "7.5 answers the reviewer's question in these terms."
+        "evaluated. The new paragraph \u201cRetrospective and out-of-sample "
+        "factors\u201d in Section 7.5 states the distinction in these terms."
     ),
     Para(
         "**What the corrected analysis shows on ROBOD.** The corrected table contains the "
@@ -406,13 +415,14 @@ CONTENT: list[Block] = [
     Label("Changes in the manuscript"),
     Bullets(
         (
-            "Section 7.5: new paragraphs \u201cWhat was wrong with the earlier "
-            "table\u201d, \u201cThe rescaling rule\u201d with Equation (17), \u201cROBOD: "
-            "exact matching at the nominal level is not attainable, and the reason is the "
-            "data\u201d, \u201cROBOD: what can be said about sharpness\u201d, \u201cThe "
-            "degenerate rows\u201d, \u201cHZMetro: an advantage in retrospect, not "
-            "established out of sample\u201d and \u201cWhere the factors come from\u201d; "
-            "the verdict on Hypothesis 3 is rewritten.",
+            "Section 7.5: new paragraphs \u201cThe rescaling rule\u201d with Equation "
+            "(17), \u201cROBOD: exact matching at the nominal level is not attainable, "
+            "and the reason is the data\u201d, \u201cROBOD: what can be said about "
+            "sharpness\u201d, \u201cThe degenerate rows\u201d, \u201cHZMetro: an "
+            "advantage in retrospect, not established out of sample\u201d and "
+            "\u201cRetrospective and out-of-sample factors\u201d; the verdict on "
+            "Hypothesis 3 is rewritten. The manuscript gives the corrected procedure and "
+            "results only; the account of the earlier error is in this response.",
             "Table 8 is replaced. It has four panels (ROBOD and HZMetro, targets 0.80 and "
             "0.90) and reports, for every method, the published coverage and width, the "
             "retrospective factor, coverage and width, and the out-of-sample factor, "
@@ -475,9 +485,9 @@ CONTENT: list[Block] = [
         "discussion and the conclusion, and each of the abstract and the conclusion "
         "carries the definition in words. Section 7.2 also reports the advantage at each "
         "horizon under the same definition: 8.1%, 9.4%, 13.9% and 16.6% at 15, 30, 60 and "
-        "120 minutes. Section 7.2 retains one explanatory sentence stating that an "
-        "earlier version gave 28.9% and why, so that a reader who compares versions is "
-        "not left to guess."
+        "120 minutes. Section 7.2 gives the figure on the paired MAE, 22.4%, beside the "
+        "MASE figure and states why the two differ. The figure of 28.9% no longer "
+        "appears in the manuscript; its explanation is given here only."
     ),
     Para(
         "**The companion figure was affected in the same way and is also corrected.** The "
@@ -494,8 +504,8 @@ CONTENT: list[Block] = [
             "Section 6.4: new paragraph \u201cDefinition of a relative improvement\u201d "
             "with Equation (16).",
             "Section 7.2: 16.6% with its definition, the per-horizon figures, and the "
-            "explanation of the earlier 28.9%; 26.9% for ROBOD with the MAE figure given "
-            "beside it.",
+            "corresponding 22.4% on the paired MAE; 26.9% for ROBOD with the MAE figure "
+            "given beside it.",
             "Abstract, Section 1, Section 5, Section 8 and Section 9: 28.9% replaced by "
             "16.6% and 26.8% by 26.9%.",
         )
@@ -624,7 +634,7 @@ CONTENT: list[Block] = [
             "hypothesis is symmetry about zero, which is false here in a way the "
             "statistic happens not to detect. Its failure to reject is evidence neither "
             "that the mean is zero nor that the median is. We keep the statistic in Table "
-            "10 for continuity and draw no conclusion from it, and the sentence that used "
+            "10 for completeness and draw no conclusion from it, and the sentence that used "
             "it to conclude that the improvement is not statistically established has "
             "been removed.",
         )
@@ -914,7 +924,7 @@ CONTENT: list[Block] = [
             "Section 4.4: the solver tolerances are stated; the description of "
             "per-quantile reconciliation now includes the rearrangement and its "
             "consequence for coherence.",
-            "Section 7.8: new paragraph \u201cWhy the per-quantile residual was not "
+            "Section 7.8: new paragraph \u201cWhy the per-quantile residual is not "
             "zero\u201d, with the measurements above and the three consequences that "
             "follow.",
             "Table 14 (formerly Table 11): the single per-quantile row is replaced by "
@@ -989,15 +999,15 @@ CONTENT: list[Block] = [
         )
     ),
     Para(
-        "The manuscript records this in two places. The limitations section states that "
-        "the correction announced in the first revision had not reached the public branch "
-        "when that revision was reviewed, and the Reproducibility statement identifies "
-        "the tagged version and describes what the repository contains at that tag."
+        "In the manuscript, the limitations section states that the experiment registry "
+        "of the repository agrees with the list of experiments that were and were not "
+        "run, and the Reproducibility statement identifies the tagged version and "
+        "describes what the repository contains at that tag."
     ),
     Label("Changes in the manuscript"),
     Bullets(
         (
-            "Section 8 (limitations): one sentence added on the repository.",
+            "Section 8 (limitations): the sentence on the repository documentation is reworded.",
             "Reproducibility statement: new paragraph identifying the tag "
             "`manuscript-r2` and the scripts of this revision.",
         )
